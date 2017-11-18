@@ -1,0 +1,23 @@
+{% extends 'meta.html' %}
+    {% block extra_styles %}<link rel=stylesheet type=text/css href="{{ url_for('static', filename='button.css') }}">
+{% endblock %}
+
+
+    {% block content %}
+
+        <h1>Выбран проект {{ vars.get('project').name_ru }}</h1>
+        <h2>Это {{ vars.get('__title__') }}</h2>
+        {% if vars.get('post') %}
+            <a class="buttonDownload" href="{{ url_for('download', method='user_report') }}">Download</a>
+            {{ vars.get('table') | safe }}
+        {% else %}
+            <form action="{{  url_for('user_report', network_id=2) }}" method="post">
+                <p>Min Date</p>
+                <p><input type="date" min="2012-01-01" max="2145-01-08" value="" placeholder="Choose a date" name="min"/></p>
+                <p>Max Date</p>
+                <p><input type="date" min="2012-01-01" max="2145-01-08" value="" placeholder="Choose a date" name="max"/></p>
+                <input type="submit" value="Сформировать отчёт" />
+            </form>
+       {% endif %}
+
+    {% endblock %}

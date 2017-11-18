@@ -1,0 +1,33 @@
+{% extends 'meta.html' %}
+    {% block extra_styles %}<link rel=stylesheet type=text/css href="{{ url_for('static', filename='button.css') }}">
+{% endblock %}
+
+
+    {% block content %}
+        {% if vars.get('key') %}
+
+            <h1>Подготовка отчёта для скважины {{ vars.get('well_name') }}...</h1>
+            <p>Формирование отчёта может занять достаточно продолжительное время...<br>Скачивание отчёта начнётся автоматически после формирования...</p>
+
+                <form name="load_report" action="{{  url_for('download_param_table', well_name=vars.get("well_name"), shortcut=vars.get('shortcut') ) }}" method="post">
+                    <input type="hidden" name="shortcut" value="{{ vars.get('shortcut') }}">
+                    <input type="hidden" name="well_name" value="{{ vars.get('well_name') }}">
+                    <input type=submit value="Ждите!..." disabled>
+                </form>
+                <script type="text/javascript">
+                        window.onload = function() {
+                                        document.forms["load_report"].submit();
+                        }
+                </script>
+        {% else %}
+            <h1>Отчёт готов!</h1>
+            <p>Скачивание отчёта начнётся автоматически...<br>Если не началось, нажмите кнопку</p>
+            <a id="downloadLink" class="buttonDownload" href="{{ url_for('download_pt', well_name=vars.get("well_name")) }}">Download</a><br>
+            <p>Так же отчёт доступен для скачивание в smb://192.169.0.135/share/tables/param_for_customer/</p>
+            <script>
+                var downloadTimeout = setTimeout(function () {
+                window.location = document.getElementById('downloadLink').href;
+    }               , 1500);
+            </script>
+        {% endif %}
+    {% endblock %}

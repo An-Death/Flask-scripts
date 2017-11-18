@@ -1,0 +1,37 @@
+{% extends 'meta.html' %}
+
+    {% block content %}
+        {% if vars.get('projects') %}
+            <h1>Выберете проект</h1>
+            {% for project in vars.get('projects') %}
+                <div class="project">
+                    <form action="{{ url_for( 'param_table', network_id=project.network_id) }}" method="post">
+                        {% if (vars.get('network_id')| int) == project.network_id %}
+                            <input id="pr{{ project.id }}" name="project_name" type="radio" value="{{ project.name_ru }}" checked />
+                            <label for="pr{{ project.id }}">{{ project.name_ru }}</label><br>
+                            <div class="wellChooser">
+                                {% if vars.get('wells') | length > 0  %}
+                                <label>
+                                    <select name="well_name" required>
+                                        {% for well in vars.get('wells') %}
+                                        <option>{{ well.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </label>
+                                    <input class="create_report" type="submit" value="Сформировать отчёт">
+                                {% else %}
+                                    <p>Активных скважин нет.</p>
+                                {% endif %}
+                            </div>
+                        {% else %}
+                            <input type="submit" value="{{ project.name_ru }}" /><br>
+                        {% endif %}
+                    </form>
+                </div>
+            {% endfor %}
+        {% else %}
+            <h1>NULL</h1>
+{#            <h2>Did not founded any active well!</h2>#}
+        {% endif %}
+
+    {% endblock %}

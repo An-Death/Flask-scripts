@@ -1,0 +1,13 @@
+{% extends 'meta.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+    {% block page %}
+	    {% block content %}
+            {% if p %}
+                {% for s in p %}
+                     <a href="{% url 'param_table_for_customer:wells' s.server_id %}" ><b>{{ s.name_ru }}</b><br></a>
+                {% endfor %}
+            {% endif %}
+	    {% endblock %}
+    {% endblock %}
