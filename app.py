@@ -1,13 +1,13 @@
 from flask import Flask
 from werkzeug.routing import BaseConverter
 from flask_sqlalchemy import SQLAlchemy
-from database import db_session
 
 from config import Configuration
 
 app = Flask(__name__)
 app.secret_key = Configuration.SECRET_KEY
 app.config.from_object(Configuration)
+db_session = Configuration.DB_SESSION
 # db = SQLAlchemy(app) // todo Перепилить на этот класс
 
 class RegexConverter(BaseConverter):
