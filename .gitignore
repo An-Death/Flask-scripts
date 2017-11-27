@@ -1,0 +1,10 @@
+.*
+scr
+scr/*
+config.py
+database.py
+__pycache__
+__pycache__/*
+uwsgi.ini
+.bash*
+!.gitignore
