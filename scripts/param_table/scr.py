@@ -1,5 +1,3 @@
-# import os
-# import json
 import datetime
 from collections import OrderedDict
 
@@ -333,9 +331,7 @@ def main(project_name:str, well_name:str, list_of_records=(1,11,12)):
 
 
 if __name__ == '__main__':
-    # project, well_name, list_of_records = parsargs()
-    # if project is None or well_name is None:
-    #     exit('Введите шорткат сервера и имя скважины! \nИскользуйте ключ "-h" для вывода помощи')
+
     project = 'bke'
     well_name = 'Ардатовская к.1, 1'
     list_of_records = [1, 11, 12]

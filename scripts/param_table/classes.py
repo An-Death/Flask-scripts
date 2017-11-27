@@ -1,11 +1,11 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-from scr.scripts import path
+from pathlib import Path
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 path_to_config_file = '.bash_connection_info.sh'
-CONFIGS = path.Path(path_to_config_file)
+CONFIGS = Path(path_to_config_file)
 
 class MetaProject():
     """Meta info for Projects

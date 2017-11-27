@@ -1,11 +1,13 @@
-from main import app
-from flask import render_template
-from flask import session, redirect, url_for, escape, request, flash, send_file
+from pathlib import Path
 
+from flask import redirect, url_for, request, send_file
+from flask import render_template
+
+from main import app
 from models.models import *
 from scr.projects.project import Project as P
-from scr.parameters_for_customer.scr import scr
-from scr.user_activity_report.users_report import get_table
+from scripts.param_table import scr
+from scripts.users_activity_report.users_report import get_table
 
 
 # todo разнести вьюхи по различным приложениям
@@ -96,9 +98,11 @@ def download_param_table(shortcut=None, well_name=None):
 @app.route('/download_param_table/download/<well_name>')
 def download_pt(well_name):
     file_name = '{}.xlsx'.format(well_name).replace(' ', '_')
-    file_path = '/home/as/share/tables/param_for_customer/{}'.format(file_name)
+    file_path = Path('/home/as/share/tables/param_for_customer') # for test
+    file_path = file_path if file_path.exists() else Path('/share') # for docker
+    file_path = file_path.joinpath(file_name)
     file_name = file_name.encode('utf-8')
-    return send_file(file_path, as_attachment=True,
+    return send_file(file_path.__str__(), as_attachment=True,
                      mimetype='text/xlsx; charset=utf-8',
                      attachment_filename=file_name)
 
