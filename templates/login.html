@@ -1,0 +1,14 @@
+{% extends 'meta.html' %}
+
+{% block content %}
+    <h1>Login:</h1>
+    <form action="" method="post" name="login">
+        {{ form.hidden_tag() }}
+        <p>
+            Please enter your mantis login: <br>
+            {{ form.login(size=80) }}<br>
+        </p>
+        <p>{{ form.remember_me }} Remember me</p>
+        <p><input type="submit" value="Sing In" /></p>
+    </form>
+{% endblock %}
