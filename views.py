@@ -1,7 +1,9 @@
 from pathlib import Path
 
 from flask import redirect, url_for, request, send_file
-from flask import render_template, flash
+# need to install Flask-Login Flask-OdenID
+from flask import render_template, flash, redirect, url_for, request
+##########################################
 
 from main import app
 from models.models import *
@@ -17,6 +19,9 @@ def index():
     return redirect(url_for('scripts'))
 
 
+########################################################################################################################
+
+
 @app.route('/login', methods = ['GET', 'POST'])
 def login():
     __title__ = 'LogIn'
@@ -26,6 +31,8 @@ def login():
         return redirect(url_for('index'))
     return render_template('login.html', vars=locals(), form=form)
 
+
+########################################################################################################################
 @app.route(r'/scripts/param_table/<regex("[0-9]+|''"):network_id>', methods=['GET', 'POST'])
 def param_table(network_id=None):
     __title__ = 'Param Table'

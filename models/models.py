@@ -1,9 +1,11 @@
+from config import Base
 from sqlalchemy import Boolean, CHAR, SmallInteger
 from sqlalchemy import Column
 from sqlalchemy import Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 
-from config import Base
+ROLE_USER = 0
+ROLE_ADMIN = 1
 
 
 class Meta:
@@ -14,6 +16,14 @@ class Meta:
             str(atr) for _, atr in self.__class__.__dict__.items() if not _.startswith('_'))))
 
 
+class User(Base, Meta):  # (db.Model):
+    id = Column(Integer, primary_key=True)
+    nickname = Column(String(64), index=True, unique=True)
+    email = Column(String(120), index=True, unique=True)
+    role = Column(SmallInteger, default=ROLE_USER)
+
+    def __repr__(self):
+        return '<User %r>' % (self.nickname)
 class Server(Base, Meta):
     __tablename__ = 'server'
 
