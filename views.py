@@ -2,11 +2,11 @@ from pathlib import Path
 
 from flask import redirect, url_for, request, send_file
 from flask import render_template, flash
+from scr.projects.project import Project as P
 
+from forms import LoginForm
 from main import app
 from models.models import *
-from forms import LoginForm
-from scr.projects.project import Project as P
 from scripts.param_table import scr
 from scripts.users_activity_report.users_report import get_table
 
@@ -121,3 +121,13 @@ def download_pt(well_name):
 def page_not_found(error):
     return redirect(url_for('index'))
     # return render_template('page_not_found.html'), 404
+
+
+@app.errorhandler(500)
+def internal_error(error):
+    # Base.session.rollback()
+    # todo Написать отправку ошибок на почту
+    app.db_session.rollback()
+    flash('Произошла ошибка сообщите адинистратору!')
+    return redirect(url_for('index'))
+    # return render_template('500.html'), 500
