@@ -1,10 +1,11 @@
 from pathlib import Path
 
 from flask import redirect, url_for, request, send_file
-from flask import render_template
+from flask import render_template, flash
 
 from main import app
 from models.models import *
+from forms import LoginForm
 from scr.projects.project import Project as P
 from scripts.param_table import scr
 from scripts.users_activity_report.users_report import get_table
@@ -15,6 +16,15 @@ from scripts.users_activity_report.users_report import get_table
 def index():
     return redirect(url_for('scripts'))
 
+
+@app.route('/login', methods = ['GET', 'POST'])
+def login():
+    __title__ = 'LogIn'
+    form = LoginForm()
+    if form.validate_on_submit():
+        flash('Login requested for name="{}" remember = "{}" '.format(form.login.data, form.remember_me.data))
+        return redirect(url_for('index'))
+    return render_template('login.html', vars=locals(), form=form)
 
 @app.route(r'/scripts/param_table/<regex("[0-9]+|''"):network_id>', methods=['GET', 'POST'])
 def param_table(network_id=None):

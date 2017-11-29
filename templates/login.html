@@ -7,6 +7,10 @@
         <p>
             Please enter your mantis login: <br>
             {{ form.login(size=80) }}<br>
+            {% for error in form.errors.login %}
+            <span style="color: red;">[{{error}}]</span>
+            {% endfor %}
+            <br>
         </p>
         <p>{{ form.remember_me }} Remember me</p>
         <p><input type="submit" value="Sing In" /></p>
