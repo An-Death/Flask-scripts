@@ -5,7 +5,7 @@
             <h1>Выберете проект</h1>
             {% for project in vars.get('projects') %}
                 <div class="project">
-                    <form action="{{ url_for( 'param_table', network_id=project.network_id) }}" method="post">
+                    <form action="{{ url_for( '.param_table', network_id=project.network_id) }}" method="post">
                     <fieldset>
                         {% if (vars.get('network_id')| int) == project.network_id %}
                             <input id="pr{{ project.id }}" name="project_name" type="radio" value="{{ project.name_ru }}" checked />

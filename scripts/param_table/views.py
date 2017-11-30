@@ -5,12 +5,11 @@ from scr.projects.project import Project as P
 
 from models.models import *
 from scripts.param_table import scr
-from views import download
 
 pt = Blueprint('param_table', __name__, url_prefix='/scripts/param_table')
 
 
-@pt.route(r'/scripts/param_table/<regex("[0-9]+|''"):network_id>', methods=['GET', 'POST'])
+@pt.route('/<regex("[0-9]+|''"):network_id>', methods=['GET', 'POST'])
 def param_table(network_id=None):
     __title__ = 'Param Table'
     projects = Project.query.filter(Project.supported == 1).all()
@@ -35,6 +34,7 @@ def param_table(network_id=None):
         list_records = request.values.get('records', '1,11,12').split(',')
         # scr.main(short, well_name)
         # return redirect(url_for('download', method='param_table_{}'.format(well_name)))
+        from views import download
         return download('param_table', short, well_name)
 
 

@@ -45,7 +45,7 @@ def user_report(network_id=None):
 def scripts():
     __title__ = 'Scripts'
     links = {
-        'param_table': url_for('pt.param_table', network_id=''),
+        'param_table': url_for('param_table.param_table', network_id=''),
         'user_report': url_for('user_report', network_id=2)  # Пока выставлен БКЕ
     }
     return render_template('scripts.html', vars=locals())
@@ -60,7 +60,7 @@ def download(method, shortcut=None, well_name=None, file_name=None):
                          mimetype='text/xlsx; charset=utf-8',
                          attachment_filename='Отчёт GTI-Online.xlsx'.encode('utf-8'))
     elif method == 'param_table' and shortcut and well_name:
-        return redirect(url_for('download_param_table', shortcut=shortcut, well_name=well_name))
+        return redirect(url_for('param_table.download_param_table', shortcut=shortcut, well_name=well_name))
 
 
 
@@ -74,7 +74,7 @@ def page_not_found(error):
 def internal_error(error):
     # Base.session.rollback()
     # todo Написать отправку ошибок на почту
-    app.db_session.rollback()
+    # app.db_session.rollback()
     flash('Произошла ошибка сообщите адинистратору!')
     return redirect(url_for('index'))
     # return render_template('500.html'), 500
