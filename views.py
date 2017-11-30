@@ -32,7 +32,7 @@ def scripts():
     __title__ = 'Scripts'
     links = {
         'param_table': url_for('param_table.param_table', network_id=''),
-        'user_report': url_for('user_activity_report.user_report', network_id=2)  # Пока выставлен БКЕ
+        'user_report': url_for('user_activity_table.user_report', network_id=2)  # Пока выставлен БКЕ
     }
     return render_template('scripts.html', vars=locals())
 
