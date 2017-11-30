@@ -3,9 +3,11 @@ from flask import render_template, flash
 
 from forms import LoginForm
 from main import app
-from scripts.param_table import views
+from scripts.param_table.views import pt
+from scripts.users_activity_report.views import at
 
-app.register_blueprint(views.pt)
+app.register_blueprint(pt)
+app.register_blueprint(at)
 
 # todo разнести вьюхи по различным приложениям
 @app.route('/')
@@ -30,7 +32,7 @@ def scripts():
     __title__ = 'Scripts'
     links = {
         'param_table': url_for('param_table.param_table', network_id=''),
-        'user_report': url_for('user_report', network_id=2)  # Пока выставлен БКЕ
+        'user_report': url_for('user_activity_report.user_report', network_id=2)  # Пока выставлен БКЕ
     }
     return render_template('scripts.html', vars=locals())
 
