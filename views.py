@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from flask import redirect, url_for, request, send_file
 from flask import render_template, flash
 from scr.projects.project import Project as P
@@ -7,9 +5,10 @@ from scr.projects.project import Project as P
 from forms import LoginForm
 from main import app
 from models.models import *
-from scripts.param_table import scr
+from scripts.param_table import views
 from scripts.users_activity_report.users_report import get_table
 
+app.register_blueprint(views.pt)
 
 # todo разнести вьюхи по различным приложениям
 @app.route('/')
@@ -26,32 +25,6 @@ def login():
         return redirect(url_for('index'))
     return render_template('login.html', vars=locals(), form=form)
 
-@app.route(r'/scripts/param_table/<regex("[0-9]+|''"):network_id>', methods=['GET', 'POST'])
-def param_table(network_id=None):
-    __title__ = 'Param Table'
-    projects = Project.query.filter(Project.supported == 1).all()
-    if 'well_name' not in request.values.keys():
-        if not network_id:
-            return render_template('param_table.html', vars=locals())
-        else:
-            n_id = Project.query.filter(Project.network_id == network_id).one()
-            serv = Server.query.filter(Server.id == n_id.server_id).one()
-            prj = P(serv.name)
-            session = prj.sql_sessionmaker()
-            wells = scr.get_active_wells(session, network_id)
-            return render_template('param_table.html', vars=locals())
-    else:
-        req = request
-        prj_name = request.values.get('project_name')
-        prj = [prj for prj in projects if prj.name_ru == prj_name]
-        server = prj[0].server
-        shortcuts = server.shortcuts
-        short = shortcuts.split(',')[0]
-        well_name = request.values.get('well_name')
-        list_records = request.values.get('records', '1,11,12').split(',')
-        # scr.main(short, well_name)
-        # return redirect(url_for('download', method='param_table_{}'.format(well_name)))
-        return download('param_table', short, well_name)
 
 
 @app.route('/scripts/user_report/<regex("[0-9]+|''"):network_id>', methods=['POST', 'GET'])
@@ -65,7 +38,7 @@ def user_report(network_id=None):
         serv = Server.query.filter(Server.id == n_id.server_id).one()
         table = get_table(P(serv.shortcuts.split(',')[0]).sql_sessionmaker())
         table = table.to_html()
-    return render_template('user_report.html', vars=locals())
+    return render_template('users_activiry_report/user_report.html', vars=locals())
 
 
 @app.route('/scripts')
@@ -89,32 +62,6 @@ def download(method, shortcut=None, well_name=None, file_name=None):
     elif method == 'param_table' and shortcut and well_name:
         return redirect(url_for('download_param_table', shortcut=shortcut, well_name=well_name))
 
-
-@app.route('/download_param_table/<shortcut>/<well_name>', methods=['GET','POST'])
-def download_param_table(shortcut=None, well_name=None):
-    __title__ = 'Download param table'
-    if request.method == 'GET':
-        key = True
-        return render_template('download_param_table.html', vars=locals())
-    elif request.method == 'POST':
-        shortcut, well_name = request.values.get('shortcut'), request.values.get('well_name')
-        # todo Вынести выполнение функции в отдельный тред
-        # todo Отлавливать остановки
-        # todo Возвращать фаил в браузер после выполнения
-        scr.main(shortcut, well_name)  # Скрипт формирует и сохраняет фаил в шару
-        return render_template('download_param_table.html', vars=locals())
-
-
-@app.route('/download_param_table/download/<well_name>')
-def download_pt(well_name):
-    file_name = '{}.xlsx'.format(well_name).replace(' ', '_')
-    file_path = Path('/home/as/share/tables/param_for_customer') # for test
-    file_path = file_path if file_path.exists() else Path('/share') # for docker
-    file_path = file_path.joinpath(file_name)
-    file_name = file_name.encode('utf-8')
-    return send_file(file_path.__str__(), as_attachment=True,
-                     mimetype='text/xlsx; charset=utf-8',
-                     attachment_filename=file_name)
 
 
 @app.errorhandler(404)
