@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from flask import Blueprint, request, render_template
 from scr.projects.project import Project as P
 
@@ -12,6 +14,13 @@ at = Blueprint('user_activity_table', __name__, url_prefix='/scripts/user_activi
 def user_report(network_id=None):
     __title__ = 'User Report'
     form = ChoseDateForm(request.form)
+    # todo сделать дату старта и стопа на начало месяца каждый раз!
+    _dt = datetime.now()
+    _timedelta = timedelta(weeks=12)
+    _dt_from = _dt - _timedelta
+    _dt = _dt.strftime('%Y-%m-%d')
+    _dt_from = _dt_from.strftime('%Y-%m-%d')
+
     if form.validate_on_submit():
         post = True
         n_id = Project.query.filter(Project.network_id == network_id).one()

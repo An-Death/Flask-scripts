@@ -15,11 +15,9 @@
             <form action="{{ url_for('.user_report', network_id=2) }}" method="post">
                 {{ vars.get('form').csrf_token }}
                 <p>Min Date</p>
-                {{ render_field(vars.get('form').date_from, min="2012-01-01", max="2145-01-08", value="", placeholder="Choose a date", default='2012-01-01') }}
-                {#                <p><input type="date" min="2012-01-01" max="2145-01-08" value="" placeholder="Choose a date" name="min"/></p>#}
+                {{ render_field(vars.get('form').date_from, min="2012-12-01", max="2145-01-08", value="{{ vars.get('_dt_from') }}", placeholder="Choose a date") }}
                 <p>Max Date</p>
-                {{ render_field(vars.get('form').date_to, min="2012-01-01", max="2145-01-08", value="", placeholder="Choose a date", default='2012-01-01') }}
-                {#                <p><input type="date" min="2012-01-01" max="2145-01-08" value="" placeholder="Choose a date" name="max"/></p>#}
+                {{ render_field(vars.get('form').date_to, min="2012-12-01", max="2145-01-08", value="{{ vars.get('_dt') }}", placeholder="Choose a date") }}
                 <input type="submit" value="Сформировать отчёт" />
             </form>
        {% endif %}
