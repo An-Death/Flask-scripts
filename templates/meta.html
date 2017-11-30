@@ -10,41 +10,48 @@
 
     {% block extra_styles %}{% endblock %}
     <title> {% block title %}{{ vars.get('__title__') }} {% endblock %}</title>
-    {% with messages = get_flashed_messages() %}
-      {% if messages %}
-        <ul class=flashes>
-        {% for message in messages %}
-          <li>{{ message }}</li>
-        {% endfor %}
-        </ul>
-      {% endif %}
-    {% endwith %}
-
 
 </head>
 <body class="{% block body_class %}{% endblock %}">
-    {% block header %}
-        {% block navbar %}
-            <div class="navBar">
-            <input class='BackButton' type="button" value="Back" onclick="window.history.back()" />
-            <input class='HomeButton' type="button" value="Home" onclick='window.location.href="{{ url_for('index') }}"' />
-            {{ vars.get('__title__') }}
-            </div>
-        {% endblock %}
-    {% endblock %}
-    {% block page %}
-        <div class="page">
-	    {% block content %}
 
+<div id="messages-wrap">
+    <div id="messages">
+        {% for category, msg in get_flashed_messages(with_categories=true) %}
+            <p class="message flash-{{ category }}">{{ msg }}</p>
+        {% endfor %}
+    </div>
+</div>
+
+{% block header %}
+    <div class="navBar">
+        {% block navbar %}
+            <input class='BackButton' type="button" value="Back" onclick="window.history.back()"/>
+            <input class='HomeButton' type="button" value="Home"
+                   onclick='window.location.href="{{ url_for('index') }}"'/>
+            {{ vars.get('__title__') }}
+        {% endblock %}
+    </div>
+    {% endblock %}
+
+<div class="page">
+    {% block page %}
+        <div class="content">
+            {% block content %}{% endblock %}
+        </div>
+    {% endblock %}
+</div>
+
+<div class="footer">
+    {% block footer %}
+        <div class="copyright">
+	    {% block copyright %}
+            <footer>
+                <small>&copy; Copyright 2017, AS</small>
+            </footer>
 	    {% endblock %}
         </div>
     {% endblock %}
-
-    {% block footer %}
-
-	    {% block copyright %}
-	    {% endblock %}
-    {% endblock %}
+</div>
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
 
