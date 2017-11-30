@@ -11,10 +11,13 @@
             <a class="buttonDownload" href="{{ url_for('download', method='user_report') }}">Download</a>
             {{ vars.get('table') | safe }}
         {% else %}
-            <form action="{{  url_for('user_report', network_id=2) }}" method="post">
+            {% from "forms/macros.html" import render_field %}
+            <form action="{{ url_for('.user_report', network_id=2) }}" method="post">
+                {{ vars.get('form').csrf_token }}
                 <p>Min Date</p>
                 <p><input type="date" min="2012-01-01" max="2145-01-08" value="" placeholder="Choose a date" name="min"/></p>
                 <p>Max Date</p>
+                {{ render_field(vars.get('form').date_to, min="2012-01-01", max="2145-01-08", value="", placeholder="Choose a date" ) }}
                 <p><input type="date" min="2012-01-01" max="2145-01-08" value="" placeholder="Choose a date" name="max"/></p>
                 <input type="submit" value="Сформировать отчёт" />
             </form>

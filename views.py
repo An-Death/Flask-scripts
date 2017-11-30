@@ -1,12 +1,9 @@
-from flask import redirect, url_for, request, send_file
+from flask import redirect, url_for, send_file
 from flask import render_template, flash
-from scr.projects.project import Project as P
 
 from forms import LoginForm
 from main import app
-from models.models import *
 from scripts.param_table import views
-from scripts.users_activity_report.users_report import get_table
 
 app.register_blueprint(views.pt)
 
@@ -26,19 +23,6 @@ def login():
     return render_template('login.html', vars=locals(), form=form)
 
 
-
-@app.route('/scripts/user_report/<regex("[0-9]+|''"):network_id>', methods=['POST', 'GET'])
-def user_report(network_id=None):
-    __title__ = 'User Report'
-    if request.method == 'GET':
-        project = Project.query.filter(Project.network_id == network_id).first()
-    else:
-        post = True
-        n_id = Project.query.filter(Project.network_id == network_id).one()
-        serv = Server.query.filter(Server.id == n_id.server_id).one()
-        table = get_table(P(serv.shortcuts.split(',')[0]).sql_sessionmaker())
-        table = table.to_html()
-    return render_template('users_activiry_report/user_report.html', vars=locals())
 
 
 @app.route('/scripts')

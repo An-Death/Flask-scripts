@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from flask import Blueprint, request, render_template, send_file
+from flask import Blueprint, request, render_template, send_file, url_for, redirect
 from scr.projects.project import Project as P
 
 from models.models import *
@@ -24,7 +24,6 @@ def param_table(network_id=None):
             wells = scr.get_active_wells(session, network_id)
             return render_template('param_table/param_table.html', vars=locals())
     else:
-        req = request
         prj_name = request.values.get('project_name')
         prj = [prj for prj in projects if prj.name_ru == prj_name]
         server = prj[0].server
@@ -32,10 +31,8 @@ def param_table(network_id=None):
         short = shortcuts.split(',')[0]
         well_name = request.values.get('well_name')
         list_records = request.values.get('records', '1,11,12').split(',')
-        # scr.main(short, well_name)
-        # return redirect(url_for('download', method='param_table_{}'.format(well_name)))
-        from views import download
-        return download('param_table', short, well_name)
+        return redirect(url_for('param_table.download_param_table', shortcut=short, well_name=well_name))
+
 
 
 @pt.route('/download_param_table/<shortcut>/<well_name>', methods=['GET', 'POST'])
