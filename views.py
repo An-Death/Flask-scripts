@@ -45,7 +45,7 @@ def user_report(network_id=None):
 def scripts():
     __title__ = 'Scripts'
     links = {
-        'param_table': url_for('param_table', network_id=''),
+        'param_table': url_for('pt.param_table', network_id=''),
         'user_report': url_for('user_report', network_id=2)  # Пока выставлен БКЕ
     }
     return render_template('scripts.html', vars=locals())
