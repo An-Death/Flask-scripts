@@ -132,7 +132,7 @@ class Project(Meta):
         Base.query = self.sqlsession.query_property()
 
         return well.query.join(source).join(prop).filter(source.network_id == self.network_id). \
-            filter(well.id > 0).filter(prop.status_id == 3).order_by(prop.group_id)
+            filter(well.id > 0).filter(prop.status_id == 3).order_by(prop.group_id.desc()).all()
 
 class Server_connection_info(Meta):
     __tablename__ = 'server_connection_info'
