@@ -5,6 +5,7 @@ from app import db
 
 
 class Meta(db.Model):
+    __abstract__ = True
     __tablename__ = None
 
     def __repr__(self):
@@ -19,8 +20,6 @@ class Server(Meta):
     name = db.Column(db.String(200), unique=True, nullable=False)
     shortcuts = db.Column(db.String(200), nullable=True)
 
-    connection_info = db.relationship('Server_connection_info', backref=db.backref('server', lazy='dynamic'),
-                                      lazy='dynamic')
 
     # Для создания записи сервера
     # def __init__(self, id=None, name=None, shortcuts=None):
@@ -45,8 +44,7 @@ class Project(Meta):
     name_ru = db.Column(db.String(200), nullable=True)
     name_en = db.Column(db.String(200), nullable=True)
 
-    server = db.relationship('Server', backref=db.backref("projects", lazy='dynamic'), lazy='dynamic')
-    info = db.relationship('Project_info', backref=db.backref('project', lazy='dynamic'), lazy='dynamic')
+    server = db.relationship('Server', backref=db.backref("projects"))
 
 
     def __str__(self):
@@ -160,6 +158,9 @@ class Server_connection_info(Meta):
     encryptPK = db.Column(db.String(200), nullable=True)
     encryptLK = db.Column(db.String(200), nullable=True)
 
+    server = db.relationship('Server', backref=db.backref('connection_info'))
+
+
     def __str__(self):
         return self.server
 
@@ -172,6 +173,9 @@ class Project_info(Meta):
     email = db.Column(db.String(200), nullable=True)
     phone = db.Column(db.String(200), nullable=True)
     address = db.Column(db.String(500), nullable=True)
+
+    project = db.relationship('Project', backref=db.backref('info'))
+
 
     def __str__(self):
         return self.prj

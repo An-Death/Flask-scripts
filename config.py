@@ -3,8 +3,7 @@ import database
 
 class Configuration:
     # add global config
-    pass
-
+    SQLALCHEMY_TRACK_MODIFICATION = False
 
 class Dev(Configuration):
     DEBUG = True
