@@ -4,6 +4,71 @@ body {
 .page {
     margin-top: 30px;
     }
-.wellChooser{
-    margin-left: 30px;
+.wellChooser {
+    margin: 10px 30px;
+}
+.param_table_form {
+    position: relative;
+    /*background: #dddff0;*/
+    width: 550px;
+    height: 150px;
+    margin: 10px 0 10px;
+    border: 0.5px solid lightblue;
+    -webkit-box-shadow: 2px 2px 8px rgba(0,0,0,0.2);
+    -moz-box-shadow: 2px 2px 8px rgba(0,0,0,0.2);
+        box-shadow: 2px 2px 8px rgba(0,0,0,0.2);
+}
+
+.create_report {
+    position: absolute;
+    right: 0; bottom: 0;
+}
+.buttons {
+    /*display: inline-block;*/
+    /*position: relative;*/
+    /*padding: 10px 25px;*/
+    color: white;
+
+    font-family: sans-serif;
+	text-decoration: none;
+	font-size: 0.9em;
+	text-align: center;
+	/*text-indent: 15px;*/
+    -webkit-border-radius: 10px;
+       -moz-border-radius: 10px;
+            border-radius: 10px;
+
+    background: linear-gradient(top, #00b7ea 0%,#009ec3 100%);
+    background: -moz-linear-gradient(top, #00b7ea 0%, #009ec3 100%);
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#00b7ea), color-stop(100%,#009ec3));
+    background: -webkit-linear-gradient(top, #00b7ea 0%,#009ec3 100%);
+    background: -o-linear-gradient(top, #00b7ea 0%,#009ec3 100%);
+    background: -ms-linear-gradient(top, #00b7ea 0%,#009ec3 100%); /* IE10+ */
+    background: linear-gradient(top, #00b7ea 0%,#009ec3 100%); /* W3C */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#00b7ea', endColorstr='#009ec3',GradientType=0 ); /* IE6-9 */
+}
+
+.project_name {
+    position: relative;
+    margin-left: 10px;
+    width: 100%;
+    /*background: darkturquoise;*/
+    text-decoration: underline;
+    font: bold 22px/30px Georgia, serif ;
+    /*color: darkturquoise;*/
+}
+
+.radio_item {
+    display: none;
+}
+
+
+
+.footer {
+    position: fixed; /* Фиксированное положение */
+    left: 40%; bottom: 0; /* Левый нижний угол */
+    padding: 10px; /* Поля вокруг текста */
+    /*background: #; !* Цвет фона *!*/
+    color: #dddddd; /* Цвет текста */
+    width: 100%; /* Ширина слоя */
 }

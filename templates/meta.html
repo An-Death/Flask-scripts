@@ -25,8 +25,8 @@
 {% block header %}
     <div class="navBar">
         {% block navbar %}
-            <input class='BackButton' type="button" value="Back" onclick="window.history.back()"/>
-            <input class='HomeButton' type="button" value="Home"
+            <input class='BackButton ' type="button" value="Back" onclick="window.history.back()"/>
+            <input class='HomeButton ' type="button" value="Home"
                    onclick='window.location.href="{{ url_for('index') }}"'/>
             {{ vars.get('__title__') }}
         {% endblock %}

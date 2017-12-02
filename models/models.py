@@ -20,7 +20,6 @@ class Server(Meta):
     name = db.Column(db.String(200), unique=True, nullable=False)
     shortcuts = db.Column(db.String(200), nullable=True)
 
-
     # Для создания записи сервера
     # def __init__(self, id=None, name=None, shortcuts=None):
 
@@ -46,7 +45,6 @@ class Project(Meta):
 
     server = db.relationship('Server', backref=db.backref("projects"))
 
-
     def __str__(self):
         prj = [
             ' Project {} '.format(self.name_ru).center(70, '-'),
@@ -67,22 +65,19 @@ class Project(Meta):
             'Path_to_stream: {}'.format(self.server.stream_path),
             'Path_to_reporting: {}'.format(self.server.report_path),
             'SQL INFO:',
-            'Login: {}, Pass: {}, Base_name: {}, Port: {}, Gate: {}'.format(
-                self.server.db_login,
-                self.server.db_password,
-                self.server.db_name,
-                self.server.db_port,
-                self.server.db_host
-            ),
+            'Login: {}, Pass: {}, Base_name: {}, Port: {}, Gate: {}'.format(self.server.db_login,
+                                                                            self.server.db_password,
+                                                                            self.server.db_name,
+                                                                            self.server.db_port,
+                                                                            self.server.db_host
+                                                                            ),
             'SQL_Connection: "{}"'.format(
                 'mysql --default-character-set=utf8 --safe-updates -h {} -P {} -u{} -p{} {} -A'.
-                    format(
-                    self.sever.db_host,
-                    self.server.db_port,
-                    self.server.db_login,
-                    self.server.db_password,
-                    self.server.db_name
-                ))
+                    format(self.sever.db_host,
+                           self.server.db_port,
+                           self.server.db_login,
+                           self.server.db_password,
+                           self.server.db_name))
         ]
         return '\n'.join(prj)
 
@@ -134,6 +129,7 @@ class Project(Meta):
         return well.query.join(source).join(prop).filter(source.network_id == self.network_id). \
             filter(well.id > 0).filter(prop.status_id == 3).order_by(prop.group_id.desc()).all()
 
+
 class Server_connection_info(Meta):
     __tablename__ = 'server_connection_info'
 
@@ -161,7 +157,6 @@ class Server_connection_info(Meta):
 
     server = db.relationship('Server', backref=db.backref('connection_info', uselist=False))
 
-
     def __str__(self):
         return self.server
 
@@ -176,7 +171,6 @@ class Project_info(Meta):
     address = db.Column(db.String(500), nullable=True)
 
     project = db.relationship('Project', backref=db.backref('info', uselist=False))
-
 
     def __str__(self):
         return self.prj

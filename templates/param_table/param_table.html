@@ -6,11 +6,10 @@
             {% for project in vars.get('projects') %}
                 <div class="project">
                     {% if (vars.get('network_id')| int) == project.network_id %}
-                    <form action="{{ url_for( '.param_table', network_id=project.network_id) }}" method="post">
-                        <fieldset>
-                            <input id="pr{{ project.id }}" name="project_name" type="radio"
-                                   value="{{ project.network_id }}" checked/>
-                            <label for="pr{{ project.id }}">{{ project.name_ru }}</label><br>
+                        <form class="param_table_form" action="{{ url_for( '.param_table', network_id=project.network_id) }}" method="post">
+                            <fieldset>
+                            <input class="radio_item" id="pr{{ project.id }}" name="project_name" type="radio" value="{{ project.network_id }}" checked/>
+                            <label class="project_name" for="pr{{ project.id }}">{{ project.name_ru }}</label><br>
                             <div class="wellChooser">
                                 {% if vars.get('wells') | length > 0 %}
                                     <label>
@@ -21,13 +20,31 @@
                                             {% endfor %}
                                         </select>
                                     </label>
-                                    <input class="create_report" type="submit" value="Сформировать отчёт">
+                                    <br>
+                                    <input id="records" type="checkbox">
+                                    <label for="records">Records</label>
+                                    <input class="records" type="text" placeholder="1,11,12" disabled>
+                                    <br>
+                                    <input id="limits" type="checkbox">
+                                    <label for="limits">Limits</label>
+                                    <input id="limits" list="limit" name="limits" placeholder="weeks" disabled>
+                                    <label for="limits"></label>
+                                        <datalist id="limit">
+                                            <option value="weeks">Weeks</option>
+                                            <option value="days">Days</option>
+                                            <option value="custom">Custom</option>
+                                            <option value="full">Full data</option>
+                                        </datalist>
+                                    <input class="inputnumber" type="number" placeholder="2" disabled>
+                                    <input type="date" id="from" min="2012-12-01" max="2145-01-08" hidden disabled>
+                                    <input type="date" id="to" min="2012-12-01" max="2145-01-08" hidden disabled>
+                                    <input class="create_report " type="submit" value="Сформировать отчёт">
                                 {% else %}
                                     <p>Активных скважин нет.</p>
                                 {% endif %}
                             </div>
-                        </fieldset>
-                    </form>
+                            </fieldset>
+                        </form>
                     {% else %}
                         <a class='project'
                            href="{{ url_for('.param_table', network_id=project.network_id) }}">{{ project.name_ru }}</a>
