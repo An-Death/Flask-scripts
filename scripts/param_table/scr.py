@@ -1,10 +1,10 @@
 import datetime
 from collections import OrderedDict
+from pathlib import Path
 
 import pandas as pd
 from sqlalchemy.exc import ProgrammingError
 from xlsxwriter.utility import xl_range, xl_col_to_name
-from pathlib import Path
 
 from .classes import Project, Well
 
@@ -21,26 +21,6 @@ def get_date():
     diff = datetime.timedelta(days=2)
     date2 = date1 - diff
     return date1, date2
-
-
-
-def get_active_wells(session, network_id):
-
-    select_wells = '''SELECT 
-                      ww.id, 
-                      COALESCE(ww.name, wp.name_full, ww.alias) as name,
-                      wellbore_id 
-                      FROM 
-                      WITS_WELL ww, WITS_SOURCE ws, WITS_NETWORK wn,WITS_WELL_PROP wp LEFT JOIN 
-                      WITS_WELL_GROUP on WITS_WELL_GROUP.id=group_id 
-                      WHERE ww.source_id = ws.id 
-                      AND wn.id = ws.network_id 
-                      AND ww.id > 0 
-                      AND wn.id = {} 
-                      and well_id = ww.id
-                      and wp.status_id = 3 ORDER BY ww.modified_date DESC'''.format(network_id)
-    with session.connection() as con:
-        return con.execute(select_wells).fetchall()
 
 
 def get_project_configs(prj_shortcut):

@@ -1,6 +1,7 @@
 from pathlib import Path
 
-from flask import Blueprint, request, render_template, send_file, url_for, redirect
+from flask import Blueprint, request, render_template, send_file, url_for, redirect, flash
+from sqlalchemy.exc import OperationalError
 
 from models.models import *
 from scripts.param_table import scr
@@ -16,12 +17,12 @@ def param_table(network_id=None):
         if not network_id:
             return render_template('param_table/param_table.html', vars=locals())
         else:
-            n_id = Project.query.filter(Project.network_id == network_id).one()
-            # serv = Server.query.filter(Server.id == n_id.server_id).one()
-            # prj = P(serv.name)
-            # session = prj.sql_sessionmaker()
-            # wells = scr.get_active_wells(session, network_id)
-            wells = n_id.get_active_wells()
+            project = Project.query.filter(Project.network_id == network_id).one()
+            try:
+                wells = project.get_active_wells()
+            except OperationalError:
+                flash(f'База данных проекта {project.name_ru} недоступна!')
+                return redirect(url_for('param_table'))
             return render_template('param_table/param_table.html', vars=locals())
     else:
         prj_name = request.values.get('project_name')
@@ -31,12 +32,11 @@ def param_table(network_id=None):
         short = shortcuts.split(',')[0]
         well_name = request.values.get('well_name')
         list_records = request.values.get('records', '1,11,12').split(',')
-        return redirect(url_for('param_table.download_param_table', shortcut=short, well_name=well_name))
+        return redirect(url_for('param_table.download_param_table', network_id=short, well_id=well_name))
 
 
-
-@pt.route('/download_param_table/<shortcut>/<well_name>', methods=['GET', 'POST'])
-def download_param_table(shortcut=None, well_name=None):
+@pt.route('/download_param_table/<network_id>/<well_id>', methods=['GET', 'POST'])
+def download_param_table(network_id=None, well_id=None):
     __title__ = 'Download param table'
     if request.method == 'GET':
         key = True
