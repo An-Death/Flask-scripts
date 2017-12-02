@@ -1,4 +1,5 @@
 from flask import Blueprint, request, render_template
+# todo Перенести проджект в модели
 from scr.projects.project import Project as P
 
 from models.models import *
@@ -19,6 +20,7 @@ def user_report(network_id=None):
         serv = Server.query.filter(Server.id == n_id.server_id).one()
         table = get_table(P(serv.shortcuts.split(',')[0]).sql_sessionmaker())
         table = table.to_html()
+        # todo Заставить формировать отчёт
     else:
         project = Project.query.filter(Project.network_id == network_id).first()
     return render_template('users_activiry_report/user_report.html', vars=locals())

@@ -1,12 +1,14 @@
-from config import Configuration
 from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
 from werkzeug.routing import BaseConverter
 
+from config import Dev
+
 app = Flask(__name__)
-app.secret_key = Configuration.SECRET_KEY
-app.config.from_object(Configuration)
-db_session = Configuration.DB_SESSION
-# db = SQLAlchemy(app) // todo Перепилить на этот класс
+app.secret_key = Dev.SECRET_KEY
+app.config.from_object(Dev)
+# db_session = Configuration.DB_SESSION
+db = SQLAlchemy(app)
 
 if not app.debug:
     import logging
