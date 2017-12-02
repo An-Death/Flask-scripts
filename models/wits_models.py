@@ -1,8 +1,9 @@
-from sqlalchemy import Column
-from sqlalchemy import Integer, String, ForeignKey, Text, DateTime
 from sqlalchemy import BLOB, DECIMAL, Enum
+from sqlalchemy import Column
+from sqlalchemy import Integer, String, ForeignKey, Text, DateTime, Float, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql.functions import now
 
 Base = declarative_base()
 
@@ -26,6 +27,10 @@ class Wits_network(Base, Meta):
     phone = Column('phone', String(32))
     address = Column('address', String(128))
     logo = Column('logo', BLOB)
+
+    groups = relationship('Wits_well_group', backref='network')
+    users = relationship('Wits_user', backref='network')
+    boxes = relationship('Wits_source', backref='network')
 
 
 class Wits_user(Base, Meta):
@@ -51,7 +56,6 @@ class Wits_user(Base, Meta):
     tel = Column('tel', String(32))
     removed = Column('removed', Integer)
 
-    network = relationship("Wits_network", backref="users")
     group = relationship('Wits_user_group', backref='users')
 
 
@@ -65,7 +69,7 @@ class Wits_user_log(Base, Meta):
     data = Column('data', Text)
 
     event = relationship('Wits_user_event', backref='events')
-    sessions = relationship('Wits_user', backref='sessions')
+    user = relationship('Wits_user', backref='sessions')
 
 
 class Wits_user_event(Base, Meta):
@@ -84,14 +88,45 @@ class Wits_user_group(Base, Meta):
     name = Column('name', String(255))
 
 
+class Wits_source(Base, Meta):
+    __tablename__ = 'WITS_SOURCE'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    type_id = Column('type_id', Integer, ForeignKey('WITS_SOURCE_TYPE.id'), nullable=False)
+    network_id = Column('network_id', Integer, ForeignKey('WITS_NETWORK.id'), nullable=False)
+    name = Column('name', String(255))
+    service_network_id = Column('service_network_id', Integer)
+    service_company = Column('service_company', String(255))
+    product_key = Column('product_key', String(255))
+    health_address = Column('health_address', String(255))
+    health_auth = Column('health_auth', String(32))
+    last_packet_id = Column('last_packet_id', Integer, nullable=False, default=-1, for_update=False)
+    modified_date = Column('modified_date', DateTime, nullable=False, default=now())
+    timezone = Column('timezone', String(6), nullable=False, default='+00:00', for_update=False)
+
+    source_type = relationship('Wits_source_type', backref='source')
+    well = relationship("Wits_well", backref="source")
+
+
+class Wits_source_type(Base, Meta):
+    __tablename__ = 'WITS_SOURCE_TYPE'
+
+    id = Column('id', Integer, primary_key=True, nullable=False)
+    name_en = Column('name_en', String(255), nullable=False)
+    name_ru = Column('name_ru', String(255))
+    producer = Column('producer', String(255))
+
+    wellbores = relationship('Wits_wellbore', backref='source_type')
+
+
 class Wits_well(Base, Meta):
     __tablename__ = 'WITS_WELL'
     # __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(255))
-    wellbore_id = Column(Integer)  # , ForeignKey('WITS_WELLBORE.id'))
-    source_id = Column(Integer)
+    wellbore_id = Column(Integer, ForeignKey('WITS_WELLBORE.id'))
+    source_id = Column(Integer, ForeignKey('WITS_SOURCE.id'))
     created_date = Column(DateTime)
     modified_date = Column(DateTime)
     timeshift = Column(Integer)
@@ -100,12 +135,59 @@ class Wits_well(Base, Meta):
     alias = Column(String(255))
     external_id = Column(String(39))
 
-    # source = relationship("Wits_source", backref="id")
-    # wellbore = relationship('Wits_wellbore', backref='well')
+    property = relationship('Wits_well_prop', backref='well')
+    wellbores = relationship('Wits_wellbore', backref='well')
 
     @classmethod
     def checkwell(cls, ses, name: str):
         return bool(ses.query(cls.name).filter(cls.name == name).count())
+
+    @property
+    def source_type(self):
+        return ':'.join(('name_ru', self.source.source_type.name_ru))
+
+
+class Wits_well_group(Base, Meta):
+    __tablename__ = 'WITS_WELL_GROUP'
+
+    id = Column('id', Integer, primary_key=True, nullable=False)
+    name = Column('name', String(255), nullable=False)
+    Column('network_id', Integer, ForeignKey('WITS_NETWORK.id'))
+    Column('user_id', Integer, nullable=False)
+    Column('parent_id', Integer)
+    Column('order_num', Integer, nullable=False, default=0, for_update=False)
+
+    wells = relationship('Wits_well_prop', backref='group')
+
+
+class Wits_well_prop(Base, Meta):
+    __tablename__ = 'WITS_WELL_PROP'
+
+    well_id = Column(Integer, ForeignKey('WITS_WELL.id'), primary_key=True, nullable=False)
+    area = Column(String(255))
+    pad = Column(String(255))
+    number = Column(String(64))
+    longitude = Column(Float)
+    latitude = Column(Float)
+    type_id = Column(Integer, nullable=False, default=1)
+    status_id = Column(Integer, nullable=False, default=3)
+    purpose_id = Column(Integer, nullable=False, default=22)
+    video_enabled = Column(Boolean, default=False)
+    cameras_count = Column(Integer, nullable=False, default=0)
+    gti_enabled = Column(Boolean, default=False)
+    group_id = Column(Integer, ForeignKey('WITS_WELL_GROUP.id'))
+    order_num = Column(Integer, nullable=False, default=0)
+    name_full = Column(String(255))
+    ground_elevation = Column(Float, nullable=False, default=0)
+    evidence_address = Column(String(255))
+    embedded_address = Column(String(255))
+    cuttings_depth = Column(Float, nullable=False, default=0)
+    mwd_enabled = Column(Integer, nullable=False, default=0)
+    rig_contacts = Column(String(255))
+    rig_crew_id = Column(Integer)
+    rig_type_id = Column(Integer)
+    air_temperature = Column(Float)
+    opslog_autoimport_enabled = Column(Boolean, nullable=False, default=0)
 
 
 class Wits_wellbore(Base, Meta):
@@ -121,7 +203,7 @@ class Wits_wellbore(Base, Meta):
     status_id = Column(Integer)
     purpose_id = Column(Integer)
     type_id = Column(Integer)
-    source_type_id = Column(Integer)
+    source_type_id = Column(Integer, ForeignKey('WITS_SOURCE_TYPE.id'))
     plan_depth_unit = Column(Enum('m', 'ft'))
     plan_start_depth = Column(DECIMAL)
     plan_start_date = Column(DateTime)
@@ -129,8 +211,6 @@ class Wits_wellbore(Base, Meta):
     current_depth = Column(DECIMAL)
     bit_pos = Column(DECIMAL)
     activity_id = Column(Integer)
-
-    well = relationship('Wits_well', backref='wellbores')
 
 
 class TableMapper:
