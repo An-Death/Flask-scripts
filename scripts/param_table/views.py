@@ -1,7 +1,6 @@
 from pathlib import Path
 
 from flask import Blueprint, request, render_template, send_file, url_for, redirect
-from scr.projects.project import Project as P
 
 from models.models import *
 from scripts.param_table import scr
@@ -18,10 +17,11 @@ def param_table(network_id=None):
             return render_template('param_table/param_table.html', vars=locals())
         else:
             n_id = Project.query.filter(Project.network_id == network_id).one()
-            serv = Server.query.filter(Server.id == n_id.server_id).one()
-            prj = P(serv.name)
-            session = prj.sql_sessionmaker()
-            wells = scr.get_active_wells(session, network_id)
+            # serv = Server.query.filter(Server.id == n_id.server_id).one()
+            # prj = P(serv.name)
+            # session = prj.sql_sessionmaker()
+            # wells = scr.get_active_wells(session, network_id)
+            wells = n_id.get_active_wells()
             return render_template('param_table/param_table.html', vars=locals())
     else:
         prj_name = request.values.get('project_name')

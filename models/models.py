@@ -19,7 +19,8 @@ class Server(Meta):
     name = db.Column(db.String(200), unique=True, nullable=False)
     shortcuts = db.Column(db.String(200), nullable=True)
 
-    connection_info = db.relationship('Server_connection_info', backref='server')
+    connection_info = db.relationship('Server_connection_info', backref=db.backref('server', lazy='dynamic'),
+                                      lazy='dynamic')
 
     # Для создания записи сервера
     # def __init__(self, id=None, name=None, shortcuts=None):
@@ -44,8 +45,8 @@ class Project(Meta):
     name_ru = db.Column(db.String(200), nullable=True)
     name_en = db.Column(db.String(200), nullable=True)
 
-    server = db.relationship('Server', backref="projects")
-    info = db.relationship('Project_info', backref='project')
+    server = db.relationship('Server', backref=db.backref("projects", lazy='dynamic'), lazy='dynamic')
+    info = db.relationship('Project_info', backref=db.backref('project', lazy='dynamic'), lazy='dynamic')
 
 
     def __str__(self):
@@ -120,17 +121,19 @@ class Project(Meta):
 
     @property
     def sqlsession(self):
-        self.session = scoped_session(sessionmaker(autocommit=False,
-                                                   autoflush=False,
-                                                   bind=self._sql_engine()))
+        if not hasattr(self, 'session'):
+            self.session = scoped_session(sessionmaker(autocommit=False,
+                                                       autoflush=False,
+                                                       bind=self._sql_engine()))
         return self.session
 
-    def active_wells(self):
+    def get_active_wells(self):
         from .wits_models import Base
-        Base.query = self.sqlsession.query_property()
         from .wits_models import Wits_well as Well
-        return Well.query.all()
+        Base.query = self.sqlsession.query_property()
 
+        return Well.query.filter(Well.source.network_id == self.network_id). \
+            filter(Well.id > 0).filter(Well.property.status_id == 3).order_by(Well.property.group.id)
 
 class Server_connection_info(Meta):
     __tablename__ = 'server_connection_info'
