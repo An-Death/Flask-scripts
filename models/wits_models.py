@@ -2,7 +2,7 @@ from sqlalchemy import BLOB, DECIMAL, Enum
 from sqlalchemy import Column
 from sqlalchemy import Integer, String, ForeignKey, Text, DateTime, Float, Boolean
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql.functions import now
 
 Base = declarative_base()
@@ -105,7 +105,7 @@ class Wits_source(Base, Meta):
     modified_date = Column('modified_date', DateTime, nullable=False, default=now())
     timezone = Column('timezone', String(6), nullable=False, default='+00:00')
 
-    source_type = relationship('Wits_source_type', backref='source')
+    source_type = relationship('Wits_source_type', backref=backref('source', uselist=False))
     network = relationship('Wits_network', backref='boxes')
 
 
@@ -135,8 +135,8 @@ class Wits_well(Base, Meta):
     alias = Column(String(255))
     external_id = Column(String(39))
 
-    source = relationship("Wits_source", backref="well")
-    wellbores = relationship('Wits_wellbore', backref='well')
+    source = relationship('Wits_source', backref=backref('wells'))
+    wellbores = relationship('Wits_wellbore', backref=backref('well', uselist=False))
 
     @classmethod
     def checkwell(cls, ses, name: str):
@@ -188,7 +188,7 @@ class Wits_well_prop(Base, Meta):
     air_temperature = Column(Float)
     opslog_autoimport_enabled = Column(Boolean, nullable=False, default=0)
 
-    well = relationship('Wits_well', backref='property')
+    well = relationship('Wits_well', backref=backref('properties', uselist=False))
     group = relationship('Wits_well_group', backref='wells')
 
 
@@ -198,7 +198,7 @@ class Wits_wellbore(Base, Meta):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(255))
-    well_id = Column(Integer, ForeignKey('WITS_WELL.id'))
+    well_id = Column(Integer)
     packet_id_min = Column(Integer)
     packet_id_max = Column(Integer)
     created_date = Column(DateTime)

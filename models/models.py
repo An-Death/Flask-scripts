@@ -97,11 +97,12 @@ class Project(Meta):
         """
 
         engine_str = 'mysql+pymysql://{u}:{p}@{h}{port}/{b_name}?charset=utf8&use_unicode=1'.format(
-            u=self.server.user,
-            p=self.server.password,
-            h=self.server.host,
-            port='' if self.server.port is None or '' else ':' + str(self.server.port),
-            b_name=self.server.bname
+            u=self.server.connection_info.db_login,
+            p=self.server.connection_info.db_password,
+            h=self.server.connection_info.db_host,
+            port='' if self.server.connection_info.db_port is None or '' else ':' + str(
+                self.server.connection_info.db_port),
+            b_name=self.server.connection_info.db_name
         )
         self.engine = create_engine(engine_str, convert_unicode=True, echo=loging)
         return self.engine
@@ -127,11 +128,11 @@ class Project(Meta):
 
     def get_active_wells(self):
         from .wits_models import Base
-        from .wits_models import Wits_well as Well
+        from .wits_models import Wits_well as well, Wits_source as source, Wits_well_prop as prop
         Base.query = self.sqlsession.query_property()
 
-        return Well.query.filter(Well.source.network_id == self.network_id). \
-            filter(Well.id > 0).filter(Well.property.status_id == 3).order_by(Well.property.group.id)
+        return well.query.join(source).join(prop).filter(source.network_id == self.network_id). \
+            filter(well.id > 0).filter(prop.status_id == 3).order_by(prop.group_id)
 
 class Server_connection_info(Meta):
     __tablename__ = 'server_connection_info'
@@ -158,7 +159,7 @@ class Server_connection_info(Meta):
     encryptPK = db.Column(db.String(200), nullable=True)
     encryptLK = db.Column(db.String(200), nullable=True)
 
-    server = db.relationship('Server', backref=db.backref('connection_info'))
+    server = db.relationship('Server', backref=db.backref('connection_info', uselist=False))
 
 
     def __str__(self):
@@ -174,7 +175,7 @@ class Project_info(Meta):
     phone = db.Column(db.String(200), nullable=True)
     address = db.Column(db.String(500), nullable=True)
 
-    project = db.relationship('Project', backref=db.backref('info'))
+    project = db.relationship('Project', backref=db.backref('info', uselist=False))
 
 
     def __str__(self):
