@@ -1,6 +1,7 @@
 {% extends 'meta.html' %}
 
     {% block content %}
+        <script type="text/javascript" src="{{ url_for('static', filename='js/param_table_input_form.js') }}"></script>
         {% if vars.get('projects') %}
             <h1>Выберете проект</h1>
             {% for project in vars.get('projects') %}
@@ -13,7 +14,7 @@
                             <div class="wellChooser">
                                 {% if vars.get('wells') | length > 0 %}
                                     <label>
-                                        <select name="well_name" required>
+                                        <select name="well_id" required>
                                             <p>Выберите скважину:</p>
                                             {% for well in vars.get('wells') %}
                                                 <option value="{{ well.id }}">{{ well.name }}</option>
@@ -21,21 +22,22 @@
                                         </select>
                                     </label>
                                     <br>
-                                    <input id="records" type="checkbox">
+                                    <input id="records" class="records" type="checkbox" onchange='activateOrDisable("records", ["records_list"]);'>
                                     <label for="records">Records</label>
-                                    <input class="records" type="text" placeholder="1,11,12" disabled>
+                                    <input id="records_list" class="records_list" type="text" placeholder="1,11,12" disabled>
                                     <br>
-                                    <input id="limits" type="checkbox">
+                                    <input id="limits" type="checkbox" onchange='activateOrDisable("limits", ["limits_list", "limit_value"]);'>
                                     <label for="limits">Limits</label>
-                                    <input id="limits" list="limit" name="limits" placeholder="weeks" disabled>
-                                    <label for="limits"></label>
-                                        <datalist id="limit">
+                                    <label for="limits_list">
+                                        <select id="limits_list" disabled>
                                             <option value="weeks">Weeks</option>
                                             <option value="days">Days</option>
-                                            <option value="custom">Custom</option>
-                                            <option value="full">Full data</option>
-                                        </datalist>
-                                    <input class="inputnumber" type="number" placeholder="2" disabled>
+{#                                            todo Допилить js для скрытия/открытия форм#}
+{#                                            <option value="custom">Custom</option>#}
+{#                                            <option value="full">Full data</option>#}
+                                        </select>
+                                    </label>
+                                    <input id="limit_value" type="number" placeholder="2" disabled>
                                     <input type="date" id="from" min="2012-12-01" max="2145-01-08" hidden disabled>
                                     <input type="date" id="to" min="2012-12-01" max="2145-01-08" hidden disabled>
                                     <input class="create_report " type="submit" value="Сформировать отчёт">

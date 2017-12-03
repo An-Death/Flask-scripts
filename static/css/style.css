@@ -11,8 +11,8 @@ body {
     position: relative;
     /*background: #dddff0;*/
     width: 550px;
-    height: 150px;
-    margin: 10px 0 10px;
+    height: 200px;
+    margin: 10px 10px 10px;
     border: 0.5px solid lightblue;
     -webkit-box-shadow: 2px 2px 8px rgba(0,0,0,0.2);
     -moz-box-shadow: 2px 2px 8px rgba(0,0,0,0.2);
