@@ -1,6 +1,7 @@
+import datetime
 from pathlib import Path
 
-from flask import Blueprint, request, render_template, send_file, url_for, redirect, flash
+from flask import Blueprint, request, render_template, send_file, url_for, redirect, flash, g
 from sqlalchemy.exc import OperationalError
 
 from models.models import *
@@ -9,13 +10,29 @@ from scripts.param_table import scr
 
 pt = Blueprint('param_table', __name__, url_prefix='/scripts/param_table')
 
+class DateLimit:
+    def __init__(self, val=2, limit='days'):
+        if limit == 'weeks':
+            self._val = val*7
+        else:
+            self._val = val
+        self._date_to = datetime.datetime.now()
+        self._date_from = self._date_to - datetime.timedelta(days=self._val)
+
+    @property
+    def end(self):
+        return self._date_to
+    @property
+    def begin(self):
+        return self._date_from
+
 
 @pt.route('/<regex("[0-9]+|''"):network_id>', methods=['GET', 'POST'])
 def param_table(network_id=None):
     __title__ = 'Param Table'
     projects = Project.query.filter(Project.supported == 1).all()
 
-    if 'well_id' not in  request.values:
+    if 'well_id' not in request.values:
         if not network_id:
             return render_template('param_table/param_table.html', vars=locals())
         else:
@@ -37,12 +54,43 @@ def param_table(network_id=None):
         # list_of_records = form.records.data
         # limit_selector = form.limit_selector.data
         # # todo Написать условия для limit_selector
+        project = Project.query.filter(Project.network_id == network_id).one()
         well_id = request.values.get('well_id')
         list_of_records = request.values.get('records', [1, 11, 12])
         limit = request.values.get('limit', 'weeks')
         limit_value = request.values.get('limit_value', 2)
-        limit_from = request.values.get('limit_from', None)
-        limit_to = request.values.get('limit_to', None)
+        dt = DateLimit(limit_value, limit)
+        limit_from = request.values.get('limit_from', dt.begin)
+        limit_to = request.values.get('limit_to', dt.end)
+        well = project.get_well_by_id(well_id)
+        record_tables = {}
+        if not well :
+            flash(f'Скважины с id:{well_id} на проекте {project.name_ru} нет!')
+            return redirect(url_for('.param_table', network_id=network_id))
+        for record in list_of_records[:]:
+            tables = well.check_record_tables(record)
+            if tables is None:
+                flash(f'Таблиц с данными для рекода: {record} '
+                      f'- Не существует. Удаляем рекорд: {record} из списка: {list_of_records}')
+                list_of_records.remove(record)
+            else:
+                record_tables[record] = tables
+        if not list_of_records:
+            flash(f'Отсутствуют данные в скважние {well.name} '
+                  f'по заданным рекордам {request.values.get("records", [1, 11, 12])} ')
+            return redirect(url_for('.param_table', network_id=network_id))
+        for r, tables in record_tables.items():
+            idx = tables['idx']
+            data = tables['data']
+            q = idx.query.join(data, idx.id == data.idx_id).filer(idx.date > limit_from).filter(idx.date < limit_to)
+            if q.count() < 0:
+                flash(f'Отсутствуют данные в таблицах: {idx} || {data}... '
+                      f'Удаляем рекорд: {r} из списка: {list_of_records}')
+                list_of_records.pop(r)
+        if not list_of_records:
+            flash(f'Отсутствуют данные в скважние {well.name} '
+                  f'по заданным рекордам {request.values.get("records", [1, 11, 12])} ')
+            return redirect(url_for('.param_table', network_id=network_id))
         # list_records = request.values.get('records', '1,11,12').split(',')
         return redirect(url_for('param_table.download_param_table', network_id=network_id, well_id=well_id))
 

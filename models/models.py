@@ -2,6 +2,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 
 from app import db
+from .wits_models import Base
+from .wits_models import Wits_well as well, Wits_source as source, Wits_well_prop as prop
+
 
 
 class Meta(db.Model):
@@ -122,13 +125,14 @@ class Project(Meta):
         return self.session
 
     def get_active_wells(self):
-        from .wits_models import Base
-        from .wits_models import Wits_well as well, Wits_source as source, Wits_well_prop as prop
         Base.query = self.sqlsession.query_property()
 
         return well.query.join(source).join(prop).filter(source.network_id == self.network_id). \
             filter(well.id > 0).filter(prop.status_id == 3).order_by(prop.group_id.desc()).all()
 
+    def get_well_by_id(self, well_id):
+        Base.query = self.sqlsession.query_property()
+        return well.query.filter(well.id == well_id).one()
 
 class Server_connection_info(Meta):
     __tablename__ = 'server_connection_info'

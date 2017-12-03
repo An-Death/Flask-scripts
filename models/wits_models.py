@@ -1,6 +1,7 @@
 from sqlalchemy import BLOB, DECIMAL, Enum
-from sqlalchemy import Column
+from sqlalchemy import Table, Column
 from sqlalchemy import Integer, String, ForeignKey, Text, DateTime, Float, Boolean
+from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql.functions import now
@@ -145,6 +146,14 @@ class Wits_well(Base, Meta):
     def source_type(self):
         return ':'.join(('name_ru', self.source.source_type.name_ru))
 
+    def check_record_tables(self, record):
+        tables = {'idx':f'WITS_RECORD{record}_IDX_{self.wellbore_id}',
+                  'data':f'WITS_RECORD{record}_DATA_{self.wellbore_id}'}
+        mapper = TableMapper(engine=self._sa_instance_state.session.bind)
+        tables = {k:mapper.return_mapped_table(table) for k, table in tables.items()}
+        return None if None in tables.values() else tables
+
+
 
 class Wits_well_group(Base, Meta):
     __tablename__ = 'WITS_WELL_GROUP'
@@ -220,9 +229,14 @@ class Wits_wellbore(Base, Meta):
 
 class TableMapper:
     def __init__(self, engine=None):
+        self.engine = engine
         self.meta = Base.metadata
-        self.meta.reflect(bind=engine)
-        self.tables = self.meta.tables
+        self.meta.bind = engine
 
     def return_mapped_table(self, name=None):
-        return self.tables[name]
+        if not self.engine.dialect.has_table(self.engine, name):
+            return None
+        else:
+            table = Table(name, self.meta, autoload=True)
+        insp = Inspector.from_engine(self.engine)
+        return table

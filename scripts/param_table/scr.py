@@ -16,11 +16,7 @@ RECORDS_COMPREHENSION = {
 }
 
 
-def get_date():
-    date1 = datetime.datetime.now()
-    diff = datetime.timedelta(weeks=2)
-    date2 = date1 - diff
-    return date1, date2
+
 
 
 def get_project_configs(prj_shortcut):
