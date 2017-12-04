@@ -1,6 +1,6 @@
 from sqlalchemy import BLOB, DECIMAL, Enum
-from sqlalchemy import Table, Column
 from sqlalchemy import Integer, String, ForeignKey, Text, DateTime, Float, Boolean
+from sqlalchemy import Table, Column
 from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
@@ -146,14 +146,48 @@ class Wits_well(Base, Meta):
     def source_type(self):
         return ':'.join(('name_ru', self.source.source_type.name_ru))
 
+    def idx_table_by_record(self, record: int):
+        return self.tables[record]['idx']
+
+    def data_table_by_record(self, record: int):
+        return self.tables[record]['data']
+
+    def _add_related_table(self, table_name, table, record=None):
+        if not hasattr(self, 'tables'):
+            self.tables = {}
+        if record:
+            if record not in self.tables:
+                self.tables[record] = {}
+            self.tables[record][table_name] = table
+        self.tables[table_name] = table
+
+    @property
+    def record_tables(self):
+        return {self.tables[i] for i in self.tables.keys() if isinstance(i, int)}
+
     def check_record_tables(self, record):
-        tables = {'idx':f'WITS_RECORD{record}_IDX_{self.wellbore_id}',
-                  'data':f'WITS_RECORD{record}_DATA_{self.wellbore_id}'}
+        record_tables = {'idx': f'WITS_RECORD{record}_IDX_{self.wellbore_id}',
+                         'data': f'WITS_RECORD{record}_DATA_{self.wellbore_id}'}
+
         mapper = TableMapper(engine=self._sa_instance_state.session.bind)
-        tables = {k:mapper.return_mapped_table(table) for k, table in tables.items()}
-        return None if None in tables.values() else tables
+        tables = {k: mapper.return_mapped_table(table) for k, table in record_tables.items()}
+        for k, v in tables.items():
+            self._add_related_table(k, v, record=record)
 
+        return None if None in tables.values() else True
 
+    def check_idx_in_record_table(self, record, start, stop):
+        idx = self.idx_table_by_record(record)
+        q = self._sa_instance_state.session.query(idx.id).filter(idx.c.date > start).filter(
+            idx.c.date < stop)
+        return bool(q.count())
+
+    def check_data_in_record_table(self, record, start, stop):
+        idx = self.idx_table_by_record(record)
+        data = self.data_table_by_record(record)
+        # self._add_related_table('')
+        # todo Доделать проверку соответствия всех мнемоников по рекорду к мнемоникам к данным
+        return True
 
 class Wits_well_group(Base, Meta):
     __tablename__ = 'WITS_WELL_GROUP'
@@ -225,6 +259,50 @@ class Wits_wellbore(Base, Meta):
     activity_id = Column(Integer)
 
     source_type = relationship('Wits_source_type', backref='wellbores')
+
+
+class Wits_source_param(Base, Meta):
+    __tablename__ = 'WITS_SOURCE_PARAM'
+
+    source_type_id = Column('source_type_id', Integer, ForeignKey('WITS_SOURCE_TYPE.id'), primary_key=True,
+                            nullable=False)
+    record_id = Column('record_id', Integer, ForeignKey(''), primary_key=True, nullable=False)
+    param_num = Column('param_num', Integer, primary_key=True, nullable=False)
+    mnemonic = Column('mnemonic', String(25), ForeignKey('WITS_PARAM.mnemonic'), nullable=False)
+    unit_id = Column('unit_id', Integer)
+    required = Column('required', Boolean, default=False)
+    depth_curve = Column('depth_curve', String(25))
+
+
+class Wits_param(Base, Meta):
+    __tablename__ = 'WITS_PARAM'
+
+    mnemonic = Column('mnemonic', String(25), ForeignKey('WITS_SOURCE_PARAM.mnemonic'), primary_key=True,
+                      nullable=False)
+    name_en = Column('name_en', String(255), nullable=False)
+    name_ru = Column('name_ru', String(255))
+    type = Column('type', String(1))
+    unit_id = Column('unit_id', Integer, ForeignKey('WITS_UNIT.id'), nullable=False)
+    value_min = Column('value_min', Float)
+    value_max = Column('value_max', Float)
+
+
+class Wits_unit(Base, Meta):
+    __tablename__ = 'WITS_UNIT'
+
+    id = Column('id', Integer, primary_key=True, autoincrement=True, nullable=False)
+    name_en = Column('name_en', String(25), nullable=False)
+    name_ru = Column('name_ru', String(25))
+    descr = Column('descr', String(255))
+    format = Column('format', String(10), nullable=False, default='8.2')
+    ratio = Column('ratio', Float)
+    ratio_operation = Column('ratio_operation', String(1))
+    alias = Column('alias', String(25))
+    main_unit_id = Column('main_unit_id', Integer)  # todo make sa.Table for convert values
+    default_ru = Column('default_ru', Integer)
+    default_en = Column('default_en', Integer)
+
+
 
 class Wits_record:
     pass
