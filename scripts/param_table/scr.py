@@ -3,6 +3,7 @@ from collections import OrderedDict
 from pathlib import Path
 
 import pandas as pd
+import re
 from sqlalchemy.exc import ProgrammingError
 from xlsxwriter.utility import xl_range, xl_col_to_name
 
@@ -16,7 +17,32 @@ RECORDS_COMPREHENSION = {
 }
 
 
+class DateLimit:
+    def __init__(self, val=2, limit='days'):
+        if limit == 'weeks':
+            self._val = val * 7
+        else:
+            self._val = val
+        self._date_to = datetime.datetime.now()
+        self._date_from = self._date_to - datetime.timedelta(days=self._val)
 
+    @property
+    def end(self):
+        return self._date_to
+
+    @property
+    def begin(self):
+        return self._date_from
+
+
+def return_list_from_str(stri):
+    # todo Возвращать лист
+    if isinstance(stri, list):
+        return stri
+    elif isinstance(stri, str):
+        return list(map(int, re.findall(r'\d+', stri)))
+    else:
+        raise ValueError(f'arg {stri} should be str or list. Get {type(stri)}')
 
 
 def get_project_configs(prj_shortcut):
