@@ -24,9 +24,10 @@
                                         </select>
                                     </label>
                                     <br>
-                                    <input id="records" class="records" type="checkbox" onchange='activateOrDisable("records", ["records_list"]);'>
+                                    <input id="records" class="records" type="checkbox"
+                                           onchange='activateOrDisable("records", ["records_input"]);'>
                                     <label for="records">Records</label>
-                                    <input id="records_list" name="records_list" class="records_list" type="text"
+                                    <input id="records_input" name="list_of_records" class="list_of_records" type="text"
                                            placeholder="1,11,12" disabled required>
                                     <br>
                                     <input id="limits" type="checkbox" onchange='activateOrDisable("limits", ["limits_list", "limit_value"]);'>
@@ -46,7 +47,7 @@
                                            hidden disabled required>
                                     <input type="date" id="to" name="limit_to" min="2012-12-01" max="2145-01-08" hidden
                                            disabled required>
-                                    <input class="create_report " type="submit" value="Сформировать отчёт">
+                                    <input class="create_report " type="submit" value="Проверить скважину">
                                 {% else %}
                                     <p>Активных скважин нет.</p>
                                 {% endif %}
