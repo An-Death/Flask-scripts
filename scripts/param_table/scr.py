@@ -4,10 +4,11 @@ from collections import OrderedDict
 from pathlib import Path
 
 import pandas as pd
-from sqlalchemy.exc import ProgrammingError
 from xlsxwriter.utility import xl_range, xl_col_to_name
 
-from .classes import Project, Well
+from models.wits_models import *
+
+# from .classes import Project, Well
 
 TEST = False
 RECORDS_COMPREHENSION = {
@@ -17,6 +18,7 @@ RECORDS_COMPREHENSION = {
 }
 
 
+# deprecated
 def get_date():
     """
     ---- Deprecated ---- 
@@ -27,6 +29,15 @@ def get_date():
     diff = datetime.timedelta(weeks=2)
     date2 = date1 - diff
     return date1, date2
+
+
+def return_list_from_str(stri):
+    if isinstance(stri, list):
+        return stri
+    elif isinstance(stri, str):
+        return sorted(list(map(int, re.findall(r'\d+', stri))))
+    else:
+        raise ValueError(f'arg {stri} should be str or list. Get {type(stri)}')
 
 
 class DateLimit:
@@ -47,83 +58,33 @@ class DateLimit:
         return self._date_from
 
 
-def return_list_from_str(stri):
-    # todo Возвращать лист
-    if isinstance(stri, list):
-        return stri
-    elif isinstance(stri, str):
-        return list(map(int, re.findall(r'\d+', stri)))
-    else:
-        raise ValueError(f'arg {stri} should be str or list. Get {type(stri)}')
+class TableCreater:
+    def __init__(self, session, well_id, list_of_records, start, stop):
+        self.session = session
+        self.well_id = well_id
+        self.list_of_records = list_of_records
+        self.start = start
+        self.stop = stop
+        # self.actc = self.get_actc()
 
+    @property
+    def connect(self):
+        return self.session.connection()
 
-def get_project_configs(prj_shortcut):
-    # --------------------------------------------------------------
-    # Создаём движок для подключения к базе соответствующего проекта
-    server = Project(prj_shortcut)
-    server.fill()  # Загружаем конфиги
-    server.sql_engine(loging=True)  # Создаём SqlAlchemy движок
-    server.sql_session_maker(server.engine)
+    def get_actc(self):
+        with self.connect as cn:
+            actc_table = pd.read_sql_query(Wits_activity_type.as_string(self.session), cn)
+        actc_table.id = actc_table.id.apply(float)
+        return actc_table
 
-    return server
-
-# depracated
-def check_well(session: object, well_name: str, records: list):
-    # todo переписать функцию, чтобы выводить вывод в браузер!
-    date1, date2 = get_date()
-    select_well = 'select name, wellbore_id from WITS_WELL where name="{}"'.format(well_name)
-    select_records = 'select * from WITS_RECORD{r}_IDX_{w} ' \
-                     'where id >0 ' \
-                     'and date between "{d2:%Y-%m-%d %H:%M:%S}" and "{d1:%Y-%m-%d %H:%M:%S}" limit 1'
-    con = session.connection()
-    well = con.execute(select_well).fetchone()
-    if not well:
-        # todo
-        exit('Скважина "{}" найдена'.format(well_name))
-    for record in records[:]:
-        rec = select_records.format(r=record, w=well.wellbore_id, d1=date1, d2=date2)
-        try:
-            res = con.execute(rec)
-        except ProgrammingError:
-            print('Индесной таблицы для рекорда: {} и скважины: {} Не найдено!\nУдаляем рекорд из списка...'.format(
-                record,
-                well.name)
-            )
-            records.pop(records.index(record))
-        # todo Отклавливать случаи, когда нету ни одной таблицы с рекордами
-        if res.rowcount == 0:
-            print('В выборке за указанное время отстутсвуют данные по рекорду.\n'
-                  '{} \nРекорд: {}'
-                  '\n{:%Y-%m-%d %H:%M:%S} and {:%Y-%m-%d %H:%M:%S}'
-                  '\nУдаляем рекорд из списка...'.format(well.name, record, date2, date1))
-            records.pop(records.index(record))
-#########################################################################
-
-def get_actc(connect):
-    sql_query_actc = 'select id, name_ru from WITS_ACTIVITY_TYPE'
-    with connect as cn:
-        actc_table = pd.read_sql_query(sql_query_actc, cn)
-    actc_table.id = actc_table.id.apply(float)
-    return actc_table
-
-
-def get_param_table(connect, record_id, source_type_id):
-    sql_query_param = 'select ' \
-                      'wsp.mnemonic as mnem, ' \
-                      'COALESCE(wu.name_ru, wu.name_en, wu2.name_ru,wu2.name_en) as unit, ' \
-                      'wp.name_ru as name ' \
-                      'from  ' \
-                      'WITS_SOURCE_PARAM wsp LEFT JOIN WITS_PARAM wp ON (wsp.mnemonic=wp.mnemonic) ' \
-                      'LEFT OUTER JOIN WITS_UNIT wu ON (wsp.unit_id=wu.id) ' \
-                      'LEFT OUTER JOIN WITS_UNIT wu2 ON (wp.unit_id=wu2.id) ' \
-                      'where source_type_id in ({})  and record_id in ({})  ' \
-                      'order by record_id, param_num;'.format(source_type_id, record_id)
-    with connect as cn:
-        param_table = pd.read_sql_query(sql_query_param, cn)
-    # Заменяем спецсимволы из базы
-    for i in (('3', '&#179;'), ('2', '&#178;')):
-        param_table.unit = param_table.unit.str.replace(i[1], i[0])
-    return param_table
+    def get_param_table(self, record_id):
+        with self.connect as cn:
+            well = Wits_well.query.filter_by(id=self.well_id).one()
+            param_table = pd.read_sql_query(well.get_param_table(record_id, as_string=True), cn)
+        # Заменяем спецсимволы из базы
+        for i in (('3', '&#179;'), ('2', '&#178;')):
+            param_table.unit = param_table.unit.str.replace(i[1], i[0])
+        return param_table
 
 
 def get_data_tables(connect, record_id, wellbore_id):
@@ -335,9 +296,9 @@ def main(project_name: str, well_name: str, list_of_records=(1, 11, 12)):
     list_of_records = list(list_of_records)
     list_of_records.sort()
     # ---------------------------------------------------------------
-    class_project = get_project_configs(project_name)
-    ses = class_project.session()
-    check_well(ses, well_name, list_of_records)
+    # class_project = get_project_configs(project_name)
+    # ses = class_project.session()
+    # check_well(ses, well_name, list_of_records)
     path_to_file = Path('/home/as/share/tables/param_for_customer/')
     path_to_file = path_to_file if path_to_file.exists() else Path('/share')
     param_for_customer(prj=class_project,
