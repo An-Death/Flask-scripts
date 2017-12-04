@@ -36,10 +36,15 @@ def prepare_table(network_id=None, well_id=None):
     Вьюха для проверки подготовки объектов для создания таблицы.
 
     Работает как GET, так и POST. При GET передаётся network_id нужного проекта и id скважины
+    GET: param_table/network_id/well_id
+
     Вьюха проверяет:
         1. Наличие скважины по id
-        2. Наличие соответствующих таблиц WITS_RECORD{}_IDX_{} и DATA для выбранной скважины
-    :param network_id:
+        2. Наличие соответствующих таблиц WITS_RECORD{}_IDX_{} и DATA для выбранной скважины.
+        3. Наличие данных в таблицах WITS_RECORD{}_IDX_{} по рекордам
+           Если пункты 2 и 3 сработали рекорд удалятся из списка рекордов. Соответственно не будет таблицы по рекорду.
+        4. (Еще не реализованно) Соответствие всех мнемоников в DATA таблице с мнемониками текущего рекорда
+    :param network_id: Id
     :param well_id:
     :return:
     """
@@ -56,7 +61,6 @@ def prepare_table(network_id=None, well_id=None):
     limit_from = request.values.get('limit_from', dt.begin)
     limit_to = request.values.get('limit_to', dt.end)
 
-    record_tables = {}
     well = project.get_well_by_id(well_id)
 
     # Start checking user input
@@ -68,32 +72,23 @@ def prepare_table(network_id=None, well_id=None):
         well = well[0]
     # Well exist... well keep checking
     for record in list_of_records[:]:
-        tables = well.check_record_tables(record)
-        if tables is None:
+        if not well.check_record_tables(record):
+            # If table are exist - they will save to dict well.tables like '{record}_idx' or '{record}_data'
             flash(f'Таблиц с данными для рекода: {record} '
                   f'- Не существует. Удаляем рекорд: {record} из списка: {list_of_records}')
             list_of_records.remove(record)
-        else:
-            # Saving sqla.Tables in dict
-            record_tables[record] = tables
+
+        mnem = set(well.check_data_in_record_table(record, start=limit_from, stop=limit_to))
+        if mnem:
+            flash(f'Ошибка. В таблице "{well.data_table_by_record(record)}" мнемоник {mnem} для рекорда "{record}" '
+                  f'отсутствует в текущем [source_type_id: { well.source_type_id }, { well.source_type_name } ]')
+            flash(f'Проверьте исходные данные! Вероятно была смена типа станции ГТИ!')
+            return redirect(url_for('.param_table', network_id=network_id))
     # List is empty?
     if not list_of_records:
         flash(f'Отсутствуют данные в скважние {well.name}\n'
               f'Проверьте скважину или список рекордов: {request.values.get("records", [1, 11, 12])}')
         return redirect(url_for('.param_table', network_id=network_id))
-    # List is not empty...
-    for r, tables in record_tables.items():
-        q = project.session.query(tables['idx']).filter(tables['idx'].c.date > limit_from).filter(
-            tables['idx'].c.date < limit_to)
-        if q.count() < 0:
-            flash(f'Отсутствуют данные в таблицe: {tables["idx"]} ... '
-                  f'Удаляем рекорд: {r} из списка: {list_of_records}')
-            list_of_records.remove(r)
-    if not list_of_records:
-        flash(f'Отсутствуют данные в скважние {well.name} \n'
-              f'Проверьте скважину или список рекордов: {request.values.get("records", [1, 11, 12])}')
-        return redirect(url_for('.param_table', network_id=network_id))
-
     # if all checks is clear do:
     well_name = well.name or well.alias
     shortcut = project.shortcut

@@ -1,9 +1,9 @@
 import datetime
+import re
 from collections import OrderedDict
 from pathlib import Path
 
 import pandas as pd
-import re
 from sqlalchemy.exc import ProgrammingError
 from xlsxwriter.utility import xl_range, xl_col_to_name
 
@@ -32,9 +32,9 @@ def get_date():
 class DateLimit:
     def __init__(self, val=2, limit='days'):
         if limit == 'weeks':
-            self._val = val * 7
+            self._val = int(val) * 7
         else:
-            self._val = val
+            self._val = int(val)
         self._date_to = datetime.datetime.now()
         self._date_from = self._date_to - datetime.timedelta(days=self._val)
 

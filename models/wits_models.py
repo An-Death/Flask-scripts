@@ -143,8 +143,13 @@ class Wits_well(Base, Meta):
     def checkwell(cls, ses, name: str):
         return bool(ses.query(cls.name).filter(cls.name == name).count())
 
-    def source_type(self):
-        return ':'.join(('name_ru', self.source.source_type.name_ru))
+    @property
+    def source_type_id(self):
+        return self.source.type_id
+
+    @property
+    def source_type_name(self):
+        return ': '.join(('name_ru', self.source.source_type.name_ru))
 
     def idx_table_by_record(self, record: int):
         return self.tables[record]['idx']
@@ -162,6 +167,12 @@ class Wits_well(Base, Meta):
         self.tables[table_name] = table
 
     @property
+    def session(self):
+        if not hasattr(self, '_session'):
+            self._session = self._sa_instance_state.session
+        return self._session
+
+    @property
     def record_tables(self):
         return {self.tables[i] for i in self.tables.keys() if isinstance(i, int)}
 
@@ -169,7 +180,7 @@ class Wits_well(Base, Meta):
         record_tables = {'idx': f'WITS_RECORD{record}_IDX_{self.wellbore_id}',
                          'data': f'WITS_RECORD{record}_DATA_{self.wellbore_id}'}
 
-        mapper = TableMapper(engine=self._sa_instance_state.session.bind)
+        mapper = TableMapper(engine=self.session.bind)
         tables = {k: mapper.return_mapped_table(table) for k, table in record_tables.items()}
         for k, v in tables.items():
             self._add_related_table(k, v, record=record)
@@ -178,16 +189,22 @@ class Wits_well(Base, Meta):
 
     def check_idx_in_record_table(self, record, start, stop):
         idx = self.idx_table_by_record(record)
-        q = self._sa_instance_state.session.query(idx.id).filter(idx.c.date > start).filter(
+        q = self.session.query(idx.c.id).filter(idx.c.date > start).filter(
             idx.c.date < stop)
         return bool(q.count())
 
     def check_data_in_record_table(self, record, start, stop):
         idx = self.idx_table_by_record(record)
         data = self.data_table_by_record(record)
-        # self._add_related_table('')
-        # todo Доделать проверку соответствия всех мнемоников по рекорду к мнемоникам к данным
-        return True
+        subquery = self.session.query(Wits_source_param.mnemonic).filter(Wits_source_param.record_id == record). \
+            filter(Wits_source_param.source_type_id == self.source_type_id)
+        idx_q = self.session.query(idx.c.id).filter(idx.c.date > start).filter(
+            idx.c.date < stop)
+        q = self.session.query(data.c.mnemonic).filter(data.c.idx_id.in_(idx_q))
+        q = q.filter(~data.c.mnemonic.in_(subquery)).limit(100)
+
+        return q.all()
+
 
 class Wits_well_group(Base, Meta):
     __tablename__ = 'WITS_WELL_GROUP'
