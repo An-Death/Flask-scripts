@@ -17,6 +17,18 @@ RECORDS_COMPREHENSION = {
 }
 
 
+def get_date():
+    """
+    ---- Deprecated ---- 
+    You should use class DateLimit
+    :return: 
+    """
+    date1 = datetime.datetime.now()
+    diff = datetime.timedelta(weeks=2)
+    date2 = date1 - diff
+    return date1, date2
+
+
 class DateLimit:
     def __init__(self, val=2, limit='days'):
         if limit == 'weeks':
@@ -55,7 +67,7 @@ def get_project_configs(prj_shortcut):
 
     return server
 
-
+# depracated
 def check_well(session: object, well_name: str, records: list):
     # todo переписать функцию, чтобы выводить вывод в браузер!
     date1, date2 = get_date()
@@ -85,7 +97,7 @@ def check_well(session: object, well_name: str, records: list):
                   '\n{:%Y-%m-%d %H:%M:%S} and {:%Y-%m-%d %H:%M:%S}'
                   '\nУдаляем рекорд из списка...'.format(well.name, record, date2, date1))
             records.pop(records.index(record))
-
+#########################################################################
 
 def get_actc(connect):
     sql_query_actc = 'select id, name_ru from WITS_ACTIVITY_TYPE'
@@ -174,6 +186,7 @@ def get_big_table(connect, actc_table, record_id, wellbore_id):
 
 def return_work_table(connect, param_table, actc_table, record_id, wellbore_id):
     table = get_big_table(connect, actc_table, record_id, wellbore_id)
+
     # ____-----debug-------------------------------------------------
     def repiter(table, param_table):
         ids_list = []
@@ -186,12 +199,13 @@ def return_work_table(connect, param_table, actc_table, record_id, wellbore_id):
                 print('{}'.format(mnem))
                 exit(1)
         return ids_list
+
     table.index = repiter(table, param_table)
     # _--------------------------------------------------------------
     #  Преобазуем мнемоники в id и сортируем по id
     # table.index = [int(ids.get_values()[0]) for ids in
     #                [param_table[param_table['mnem'] == mnem].index for mnem in table.index]]
-    #________________________________________________________________
+    # ________________________________________________________________
     table.sort_index(inplace=True)
     #  Отформатировали таблицу по параметрам
     #  Преобразовываем параметры в называния и юниты
@@ -309,7 +323,7 @@ def param_for_customer(prj, well_name, list_of_records, path_to_file: Path('.'))
         return tables
 
 
-def main(project_name:str, well_name:str, list_of_records=(1,11,12)):
+def main(project_name: str, well_name: str, list_of_records=(1, 11, 12)):
     # todo Прикрутить ключ -v --verbose для дебага SQLAlchemy
     # todo Напилиты красивого вывода для скрипта
     # todo Вынести конфиг отдельно
@@ -333,7 +347,6 @@ def main(project_name:str, well_name:str, list_of_records=(1,11,12)):
 
 
 if __name__ == '__main__':
-
     project = 'bke'
     well_name = 'Ардатовская к.1, 1'
     list_of_records = [1, 11, 12]

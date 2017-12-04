@@ -7,7 +7,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 
-path_to_config_file = '.bash_connection_info.sh'
+path_to_config_file = '../.bash_connection_info.sh'
 CONFIGS = Path(path_to_config_file)
 # todo переписать на получение конфигов из базы!
 

@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_cache import Cache
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.routing import BaseConverter
 
@@ -9,6 +10,8 @@ app.secret_key = Dev.SECRET_KEY
 app.config.from_object(Dev)
 # db_session = Configuration.DB_SESSION
 db = SQLAlchemy(app)
+cache = Cache(app, config={'CACHE_TYPE': 'simple'})
+
 
 if not app.debug:
     import logging

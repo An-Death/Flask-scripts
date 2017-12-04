@@ -226,6 +226,9 @@ class Wits_wellbore(Base, Meta):
 
     source_type = relationship('Wits_source_type', backref='wellbores')
 
+class Wits_record:
+    pass
+
 
 class TableMapper:
     def __init__(self, engine=None):

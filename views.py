@@ -2,7 +2,9 @@ from flask import redirect, url_for, send_file
 from flask import render_template, flash
 
 from forms import LoginForm
+
 from main import app
+from app import cache
 from scripts.param_table.views import pt
 from scripts.users_activity_report.views import at
 
@@ -28,10 +30,11 @@ def login():
 
 
 @app.route('/scripts')
+@cache.cached(timeout=60)
 def scripts():
     __title__ = 'Scripts'
     links = {
-        'param_table': url_for('param_table.param_table', network_id=''),
+        'param_table': url_for('param_table.param_table', network_id=None),
         'user_report': url_for('user_activity_table.user_report', network_id=2)  # Пока выставлен БКЕ
     }
     return render_template('scripts.html', vars=locals())
