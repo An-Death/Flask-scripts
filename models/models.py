@@ -6,7 +6,6 @@ from .wits_models import Base
 from .wits_models import Wits_well as well, Wits_source as source, Wits_well_prop as prop
 
 
-
 class Meta(db.Model):
     __abstract__ = True
     __tablename__ = None
@@ -123,6 +122,10 @@ class Project(Meta):
                                                        autoflush=False,
                                                        bind=self._sql_engine()))
         return self.session
+
+    @property
+    def shortcut(self):
+        return self.server.shortcut
 
     def get_active_wells(self):
         Base.query = self.sqlsession.query_property()
