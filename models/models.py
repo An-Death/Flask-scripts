@@ -96,7 +96,7 @@ class Project(Meta):
 
     def get_well_by_id(self, well_id):
         Base.query = self.sqlsession.query_property()
-        return well.query.filter(well.id == well_id).one()
+        return well.query.filter(well.id == well_id).all()
 
 class Server_connection_info(Meta):
     __tablename__ = 'server_connection_info'

@@ -9,7 +9,6 @@ from scripts.param_table.scr import DateLimit
 pt = Blueprint('param_table', __name__, url_prefix='/scripts/param_table')
 
 
-# @pt.route('/<regex("[0-9]+|''"):network_id>', methods=['GET', 'POST'])
 @pt.route('/')
 @pt.route('/<int:network_id>')
 def param_table(network_id=None):
@@ -33,6 +32,17 @@ def param_table(network_id=None):
 
 @pt.route('/<int:network_id>/<regex("\d+|''"):well_id>', methods=['GET', 'POST'])
 def prepare_table(network_id=None, well_id=None):
+    """
+    Вьюха для проверки подготовки объектов для создания таблицы.
+
+    Работает как GET, так и POST. При GET передаётся network_id нужного проекта и id скважины
+    Вьюха проверяет:
+        1. Наличие скважины по id
+        2. Наличие соответствующих таблиц WITS_RECORD{}_IDX_{} и DATA для выбранной скважины
+    :param network_id:
+    :param well_id:
+    :return:
+    """
     project = Project.query.filter(Project.network_id == network_id).one()
     well_id = request.values.get('well_id') if request.method == 'POST' else well_id
 
@@ -54,6 +64,8 @@ def prepare_table(network_id=None, well_id=None):
     if not well:
         flash(f'Скважины с id:{well_id} на проекте {project.name_ru} нет!')
         return redirect(url_for('.param_table', network_id=network_id))
+    else:
+        well = well[0]
     # Well exist... well keep checking
     for record in list_of_records[:]:
         tables = well.check_record_tables(record)
