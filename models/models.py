@@ -11,8 +11,8 @@ class Meta(db.Model):
     __tablename__ = None
 
     def __repr__(self):
-        return ('<{}({})>'.format(self.__tablename__, ','.join(
-            str(atr) for _, atr in self.__class__.__dict__.items() if not _.startswith('_'))))
+        return ('<{}({})>'.format(self.__tablename__, ', '.join(
+            _ + ': '+ str(atr) for _, atr in self.__dict__.items() if not _.startswith('_'))))
 
 
 class Server(Meta):
@@ -47,45 +47,6 @@ class Project(Meta):
 
     server = db.relationship('Server', backref=db.backref("projects"))
 
-    def __str__(self):
-        prj = [
-            ' Project {} '.format(self.name_ru).center(70, '-'),
-            'Main INFO:',
-            'host: {},  host2: {}, port: {}'.format(self.server.host, self.server.host2, self.server.port),
-            'VPN: {}, DNS: {}'.format(self.server.vpn, self.server.dns),
-            'Monitoring INFO:',
-            'URL: {}, URL2: {}'.format(self.server.url, self.server.url2),
-            #  monitoring login, pass
-            'Send_to_Address: {}, Send_to_Port: {}'.format(self.server.send_to_address, self.server.send_to_port),
-            'SSH INFO:',
-            'Ssh_user: {}, Ssh_pass: {}'.format(self.server.login, self.server.password),
-            'Connection: "{}"'.format('sshpass -p {} ssh -o StrictHostKeyChecking=no {}@{} -p{}'.
-                                      format(self.server.password,
-                                             self.server.login,
-                                             self.server.host,
-                                             self.server.port)),
-            'Path_to_stream: {}'.format(self.server.stream_path),
-            'Path_to_reporting: {}'.format(self.server.report_path),
-            'SQL INFO:',
-            'Login: {}, Pass: {}, Base_name: {}, Port: {}, Gate: {}'.format(self.server.db_login,
-                                                                            self.server.db_password,
-                                                                            self.server.db_name,
-                                                                            self.server.db_port,
-                                                                            self.server.db_host
-                                                                            ),
-            'SQL_Connection: "{}"'.format(
-                'mysql --default-character-set=utf8 --safe-updates -h {} -P {} -u{} -p{} {} -A'.
-                    format(self.sever.db_host,
-                           self.server.db_port,
-                           self.server.db_login,
-                           self.server.db_password,
-                           self.server.db_name))
-        ]
-        return '\n'.join(prj)
-
-    def __repr__(self):
-        return '<{}({})'.format(self.name,
-                                ','.join([self.server.host, self.server.port, self.server.login, self.server.password]))
 
     def _sql_engine(self, loging=True):
         """
