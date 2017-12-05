@@ -1,8 +1,8 @@
 from flask import redirect, url_for, send_file
 from flask import render_template, flash
 
+from app import app
 from forms import LoginForm
-from main import app
 from scripts.param_table.views import pt
 from scripts.users_activity_report.views import at
 
