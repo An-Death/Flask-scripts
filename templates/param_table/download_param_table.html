@@ -23,10 +23,12 @@
             <br>
             <p>Формирование отчёта может занять достаточно продолжительное время...<br>Скачивание отчёта начнётся
                 автоматически после формирования...</p>
-            <p>Если отчёт уже создан, можете скачать уже созданный:</p>
-            <a id="downloadLink" class="buttonDownload"
-               href="{{ url_for('.download', network_id = vars.get('project').network_id, well_id = vars.get('well').id) }}">Download</a>
-            <br>
+            {% if vars.get('file') %}
+                <p>Если отчёт уже создан, можете скачать уже созданный:</p>
+                <a id="downloadLink" class="buttonDownload"
+                   href="{{ url_for('.download', network_id = vars.get('project').network_id, well_id = vars.get('well').id) }}">Download</a>
+                <br>
+            {% endif %}
             {#                <script type="text/javascript">#}
             {#                        window.onload = function() {#}
             {#                                        document.forms["load_report"].submit();#}

@@ -131,11 +131,12 @@ def download(network_id=None, well_id=None):
         # Создаём таблицы
         table.create_tables()
         scr.excel_writer(path_to_file=app.config['PARAM_TABLE_DIR_PATH'],
-                         well_name=table.well_id,
+                         well_id=table.well_id,
                          common_tables=table.tables['common_tables'],
                          data_tables=table.tables['data_tables'],
                          network_id=request.values.get('network_id'))
         done = True
+        if scr.check_file_exists(network_id, well_id, app.config['PARAM_TABLE_DIR_PATH']): file = True
         return render_template('param_table/download_param_table.html', vars=locals())
     else:
         flash('UNEXCEPTIONAL ERROR')
