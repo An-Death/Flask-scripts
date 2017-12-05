@@ -20,6 +20,11 @@ class Meta(Base):
     def as_string(cls, session):
         return cls.query.statement.compile(compile_kwargs={"literal_binds": True}, dialect=session.bind.dialect)
 
+    @classmethod
+    def get(cls, pk, session=None):
+        if session:
+            Base.query = session.query_property()
+        return cls.query.get(pk)
 
 class Wits_network(Meta):
     __tablename__ = 'WITS_NETWORK'
@@ -210,12 +215,14 @@ class Wits_well(Meta):
     def check_data_in_record_table(self, record, start, stop):
         idx = self.idx_table_by_record(record)
         data = self.data_table_by_record(record)
-        subquery = self.session.query(Wits_source_param.mnemonic).filter(Wits_source_param.record_id == record). \
+        mnemonics = self.session.query(Wits_source_param.mnemonic).filter(Wits_source_param.record_id == record). \
             filter(Wits_source_param.source_type_id == self.source_type_id)
-        idx_q = self.session.query(idx.c.id).filter(idx.c.date > start).filter(
-            idx.c.date < stop)
-        q = self.session.query(data.c.mnemonic).filter(data.c.idx_id.in_(idx_q))
-        q = q.filter(~data.c.mnemonic.in_(subquery)).limit(100)
+        # idx_q = self.session.query(idx.c.id).filter(idx.c.date > start).filter(idx.c.date < stop)
+        # idx_q = idx_q.subquery('idx_q')
+        q = self.session.query(data.c.mnemonic).join(idx, idx.c.id == data.c.idx_id)
+        q = q.filter(idx.c.date > start).filter(idx.c.date < stop).group_by(data.c.mnemonic)
+        # q = self.session.query(data.c.mnemonic).filter(data.c.idx_id.in_(idx_q)).group_by(data.c.mnemonic)
+        q = q.filter(~data.c.mnemonic.in_(mnemonics))
 
         return q.all()
 
