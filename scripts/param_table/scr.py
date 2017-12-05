@@ -25,6 +25,11 @@ def return_list_from_str(stri):
         raise ValueError(f'arg {stri} should be str or list. Get {type(stri)}')
 
 
+def check_file_exists(network_id, well_id, path_to_file):
+    file_name = well_id.replace(' ', '_') + '.xlsx'
+    file_path = Path(path_to_file).joinpath(f'{network_id}').joinpath(file_name)
+    return file_path.exists()
+
 class DateLimit:
     def __init__(self, val=2, limit='days'):
         if limit == 'weeks':
@@ -51,7 +56,7 @@ class TableCreator:
         self.start = Dt(start)
         self.stop = Dt(stop)
         self.tables = {}
-        self.well = Wits_well.query.filter_by(id=self.well_id).one()
+        self.well = Wits_well.get(well_id, session)
 
         self.actc = self.get_actc()
 
@@ -74,7 +79,6 @@ class TableCreator:
     def get_data_tables(self, record_id):
         # todo Переработать запросы и обсчитывать макс значения для каждого параметра для кажого ACTC на стороне базы
         # tables = self.well.create_record_tables(record_id)
-        #
         sql_query_idx = f'select id, ' \
                         f'FROM_UNIXTIME(' \
                         f'UNIX_TIMESTAMP(' \
@@ -88,7 +92,7 @@ class TableCreator:
                         f'where date between "{self.start.to_string()}" and "{self.stop.to_string()}" '
 
         sql_query_idx_old = f'select id,date,depth from WITS_RECORD{record_id}_IDX_{self.well.wellbore_id} where ' \
-                            f'date between "{self.start.to_string()}" and "{self.stop.to_string()}" '
+                            f'date between "{self.start.to_string()}" and "{self.stop.to_string()}"'
         sql_query_data = f'select idx_id as id, mnemonic, value from ' \
                          f'WITS_RECORD{record_id}_DATA_{self.well.wellbore_id} ' \
                          f'where idx_id in ({sql_query_idx_old.replace(",date,depth", "")})'
@@ -227,9 +231,9 @@ def write_data_tables(writer, data_tables, formats):
                                                  'multi_range': ' '.join(full_datas)})
 
 
-def excel_writer(path_to_file: str, network_id: int, well_name: str, common_tables: dict, data_tables: dict):
+def excel_writer(path_to_file: str, network_id: int, well_id: str, common_tables: dict, data_tables: dict):
     # Записываем в фаил и форматируем как надо, пока фаил открыт.
-    file_name = well_name.replace(' ', '_') + '.xlsx'
+    file_name = well_id.replace(' ', '_') + '.xlsx'
     file_path = Path(path_to_file).joinpath(f'{network_id}')
     if not file_path.exists(): file_path.mkdir(exist_ok=True)
     file_name = file_path.joinpath(file_name)
