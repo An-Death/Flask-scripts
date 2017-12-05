@@ -17,7 +17,8 @@
                 <input type="hidden" name="list_of_records" value="{{ vars.get('list_of_records') }}">
                 <input type="hidden" name="limit_from" value="{{ vars.get('limit_from') }}">
                 <input type="hidden" name="limit_to" value="{{ vars.get('limit_to') }}">
-                <input type=submit value="Сформировать отчёт">
+                <input type=submit id="create_report" value="Сформировать отчёт"
+                       onclick="change('create_report','Сформировать отчёт', 'Формирую... Ждите')">
                 </form>
             <br>
             <p>Формирование отчёта может занять достаточно продолжительное время...<br>Скачивание отчёта начнётся

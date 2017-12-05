@@ -47,7 +47,9 @@
                                            hidden disabled required>
                                     <input type="date" id="to" name="limit_to" min="2012-12-01" max="2145-01-08" hidden
                                            disabled required>
-                                    <input class="create_report " type="submit" value="Проверить скважину">
+                                    <input class="create_report" id="create_report" type="submit"
+                                           value="Проверить скважину"
+                                           onclick="change('create_report', 'Проверить скважину', 'Проверяю... Ждите')">
                                 {% else %}
                                     <p>Активных скважин нет.</p>
                                 {% endif %}

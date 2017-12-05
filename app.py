@@ -3,14 +3,11 @@ from flask_cache import Cache
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.routing import BaseConverter
 
-from config import Dev
+from config import Ops
 
 app = Flask(__name__)
-app.secret_key = Dev.SECRET_KEY
-app.config.from_object(Dev)
-# db_session = Configuration.DB_SESSION
-db = SQLAlchemy(app)
-cache = Cache(app, config={'CACHE_TYPE': 'simple'})
+app.secret_key = Ops.SECRET_KEY
+app.config.from_object(Ops)
 
 
 if not app.debug:
@@ -24,6 +21,8 @@ if not app.debug:
     app.logger.addFilter(file_handler)
     app.logger.info('support_scripts started')
 
+db = SQLAlchemy(app)
+cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 
 class RegexConverter(BaseConverter):
     def __init__(self, url_map, *items):
@@ -32,8 +31,3 @@ class RegexConverter(BaseConverter):
 
 
 app.url_map.converters['regex'] = RegexConverter
-
-
-# @app.teardown_appcontext
-# def shutdown_session(exception=None):
-#     db_session.remove()

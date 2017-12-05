@@ -1,6 +1,8 @@
 click==6.7
 Flask==0.12.2
+Flask-Cache==0.13.1
 Flask-SQLAlchemy==2.3.2
+Flask-WTF==0.14.2
 itsdangerous==0.24
 Jinja2==2.10
 logger==1.4
@@ -13,4 +15,5 @@ pytz==2017.3
 six==1.11.0
 SQLAlchemy==1.1.15
 Werkzeug==0.12.2
+WTForms==2.1
 XlsxWriter==1.0.2

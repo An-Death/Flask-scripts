@@ -1,7 +1,6 @@
 from flask import redirect, url_for, send_file
 from flask import render_template, flash
 
-from app import cache
 from forms import LoginForm
 from main import app
 from scripts.param_table.views import pt
@@ -10,13 +9,13 @@ from scripts.users_activity_report.views import at
 app.register_blueprint(pt)
 app.register_blueprint(at)
 
-# todo разнести вьюхи по различным приложениям
+
 @app.route('/')
 def index():
     return redirect(url_for('scripts'))
 
 
-@app.route('/login', methods = ['GET', 'POST'])
+@app.route('/login', methods=['GET', 'POST'])
 def login():
     __title__ = 'LogIn'
     form = LoginForm()
@@ -26,10 +25,8 @@ def login():
     return render_template('login.html', vars=locals(), form=form)
 
 
-
-
 @app.route('/scripts')
-@cache.cached(timeout=60)
+# @cache.cached(timeout=60)
 def scripts():
     __title__ = 'Scripts'
     links = {
@@ -40,7 +37,7 @@ def scripts():
 
 
 # @app.route('/download/<string:method>')
-def download(method, shortcut=None, well_name=None, file_name=None):
+def download(method, shortcut=None, well_name=None):
     # todo Загружаем последний фаил из нужной папки
     if method == 'user_report':
         file_path = '/home/as/vagrant/support_scripts/scr/user_activity_report/reports/GTI-online.xlsx'
@@ -49,6 +46,7 @@ def download(method, shortcut=None, well_name=None, file_name=None):
                          attachment_filename='Отчёт GTI-Online.xlsx'.encode('utf-8'))
     elif method == 'param_table' and shortcut and well_name:
         return redirect(url_for('param_table.download', shortcut=shortcut, well_name=well_name))
+
 
 @app.errorhandler(404)
 def page_not_found(error):
