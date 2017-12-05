@@ -1,10 +1,9 @@
 from flask import redirect, url_for, send_file
 from flask import render_template, flash
 
-from forms import LoginForm
-
-from main import app
 from app import cache
+from forms import LoginForm
+from main import app
 from scripts.param_table.views import pt
 from scripts.users_activity_report.views import at
 
@@ -49,9 +48,7 @@ def download(method, shortcut=None, well_name=None, file_name=None):
                          mimetype='text/xlsx; charset=utf-8',
                          attachment_filename='Отчёт GTI-Online.xlsx'.encode('utf-8'))
     elif method == 'param_table' and shortcut and well_name:
-        return redirect(url_for('param_table.download_param_table', shortcut=shortcut, well_name=well_name))
-
-
+        return redirect(url_for('param_table.download', shortcut=shortcut, well_name=well_name))
 
 @app.errorhandler(404)
 def page_not_found(error):

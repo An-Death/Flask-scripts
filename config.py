@@ -9,8 +9,8 @@ class Dev(Configuration):
     DEBUG = True
     SECRET_KEY = 'some_simple_key'
     SQLALCHEMY_DATABASE_URI = database.Dev.SQLALCHEMY_DATABASE_URI
-    PARAM_TABLE_DIR_PATH = '~/share/tables/param_table'
-    USER_ACTIVITY_DIR_PATH = '~/share/tables/activity_table'
+    PARAM_TABLE_DIR_PATH = '/home/as/share/tables/param_table'
+    USER_ACTIVITY_DIR_PATH = '/home/as/share/tables/activity_table'
 
 class Ops(Configuration):
     DEBUG = False

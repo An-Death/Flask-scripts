@@ -1,5 +1,8 @@
-from flask import Blueprint, request, render_template, send_file, url_for, redirect, flash
+from pathlib import Path
+
+from flask import Blueprint, request, render_template, send_file, url_for, redirect, flash, abort
 from sqlalchemy.exc import OperationalError
+from sqlalchemy.orm import exc
 
 from app import app
 from models.models import *
@@ -9,11 +12,19 @@ from scripts.param_table.scr import DateLimit
 pt = Blueprint('param_table', __name__, url_prefix='/scripts/param_table')
 
 
+def redirect_url(default='/'):
+    return request.args.get('next') or \
+           request.referrer or \
+           url_for(default)
+
+
+
 @pt.route('/')
 @pt.route('/<int:network_id>')
 def param_table(network_id=None):
     __title__ = 'Param Table'
-    projects = Project.query.filter(Project.supported == 1).all()
+    # projects = Project.query.filter_by(supported=True).all()
+    projects = Project.all_supported()
     if not network_id:
         # Return list of {projects}
         return render_template('param_table/param_table.html', vars=locals())
@@ -31,7 +42,7 @@ def param_table(network_id=None):
 
 
 @pt.route('/<int:network_id>/<regex("\d+|''"):well_id>', methods=['GET', 'POST'])
-def prepare_table(network_id=None, well_id=None):
+def prepare_table(network_id, well_id):
     """
     Вьюха для проверки подготовки объектов для создания таблицы.
 
@@ -48,28 +59,32 @@ def prepare_table(network_id=None, well_id=None):
     :param well_id:
     :return:
     """
-    project = Project.query.filter(Project.network_id == network_id).one()
+    __title__ = 'Param Table'
+    network_id = network_id or request.values.get('network_id')
+    project = Project.get(network_id)
+    if not project or not network_id:
+        flash(f'project with network_id ="{network_id}" not founded!')
+        return abort(404)
     well_id = request.values.get('well_id') if request.method == 'POST' else well_id
 
     # Get data from POST request if they are... else default
-    list_of_records = scr.return_list_from_str(request.values.get('records', [1, 11, 12]))
+    list_of_records = scr.return_list_from_str(request.values.get('list_of_records', [1, 11, 12]))
     limit = request.values.get('limit', 'weeks')
     limit_value = request.values.get('limit_value', 2)
     # Prepare date limits
     dt = DateLimit(limit_value, limit)
     # if no limits in POST request set default limits
+    # todo make request data as datetime format
     limit_from = request.values.get('limit_from', dt.begin)
     limit_to = request.values.get('limit_to', dt.end)
 
-    well = project.get_well_by_id(well_id)
-
     # Start checking user input
     # Are well does exist?
-    if not well:
+    try:
+        well = project.get_well_by_id(well_id)
+    except exc.NoResultFound:
         flash(f'Скважины с id:{well_id} на проекте {project.name_ru} нет!')
         return redirect(url_for('.param_table', network_id=network_id))
-    else:
-        well = well[0]
     # Well exist... well keep checking
     for record in list_of_records[:]:
         if not well.check_record_tables(record):
@@ -90,34 +105,58 @@ def prepare_table(network_id=None, well_id=None):
               f'Проверьте скважину или список рекордов: {request.values.get("records", [1, 11, 12])}')
         return redirect(url_for('.param_table', network_id=network_id))
     # if all checks is clear do:
-    well_name = well.name or well.alias
-    shortcut = project.shortcut
-    return redirect(url_for('param_table.download_param_table', shortcut=shortcut, well_name=well_name))
+    return render_template('param_table/download_param_table.html', vars=locals())
 
-@pt.route('/download_param_table/<shortcut>/<well_name>', methods=['GET', 'POST'])
-def download_param_table(shortcut=None, well_name=None):
+
+@pt.route('/download', methods=['GET', 'POST'])
+@pt.route('/download/<int:network_id>/<int:well_id>')
+def download(network_id=None, well_id=None):
     __title__ = 'Download param table'
+
     if request.method == 'GET':
-        key = True
-        return render_template('param_table/download_param_table.html', vars=locals())
+        well_id = well_id or request.values.get('well_id')
+        network_id = network_id or request.values.get('network_id')
+        return redirect(url_for('.file', network_id=network_id, well_id=well_id))
     elif request.method == 'POST':
-        shortcut, well_name = request.values.get('shortcut'), request.values.get('well_name')
         # todo Вынести выполнение функции в отдельный тред
         # todo Отлавливать остановки
         # todo Возвращать фаил в браузер после выполнения
-        scr.main(shortcut, well_name)  # Скрипт формирует и сохраняет фаил в шару
+        network_id = network_id or request.values.get('network_id')
+        project = Project.query.filter(Project.network_id == network_id).one()
+        well_id = request.values.get('well_id')
+        list_of_records = scr.return_list_from_str(request.values.get('list_of_records'))
+        limit_from = request.values.get('limit_from')
+        limit_to = request.values.get('limit_to')
+        table = scr.TableCreator(project.sqlsession, well_id, list_of_records, limit_from, limit_to)
+        # Создаём таблицы
+        table.create_tables()
+        scr.excel_writer(path_to_file=app.config['PARAM_TABLE_DIR_PATH'],
+                         well_name=table.well_id,
+                         common_tables=table.tables['common_tables'],
+                         data_tables=table.tables['data_tables'],
+                         network_id=request.values.get('network_id'))
+        done = True
         return render_template('param_table/download_param_table.html', vars=locals())
+    else:
+        flash('UNEXCEPTIONAL ERROR')
+        return abort(404)
 
 
-@pt.route('/download_param_table/download/<well_name>')
-def download_pt(well_name):
-    file_name = '{}.xlsx'.format(well_name).replace(' ', '_')
+@pt.route('/file/<int:network_id>/<well_id>')
+def file(network_id, well_id):
+    file_name = f'{well_id}.xlsx'
     # file_path = Path('/home/as/share/tables/param_for_customer')  # for test
     # file_path = file_path if file_path.exists() else Path('/share')  # for docker
-    file_path = app.config.PARAM_TABLE_DIR_PATH
-    file_path = file_path.joinpath(file_name)
-    file_name = file_name.encode('utf-8')
-    # todo Поменять на send_from_directory!!!!!!
-    return send_file(file_path.__str__(), as_attachment=True,
-                     mimetype='text/xlsx; charset=utf-8',
-                     attachment_filename=file_name)
+    project = Project.query.filter_by(network_id=network_id).one()
+
+    file_path = app.config['PARAM_TABLE_DIR_PATH']
+    file_path = Path(file_path).joinpath(f'{network_id}').joinpath(file_name)
+    if file_path.exists():
+        well = project.get_well_by_id(well_id)
+        attachment_filename = f'{well.name.replace(" ", "_")}.xlsx'.encode('utf-8')
+        return send_file(file_path.__str__(), as_attachment=True,
+                         mimetype='text/xlsx; charset=utf-8',
+                         attachment_filename=attachment_filename)
+    else:
+        flash(f'Файла отчёта {file_name} нет, создайте фаил.')
+        return redirect(redirect_url('.param_table'))

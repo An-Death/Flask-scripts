@@ -1,14 +1,12 @@
 import datetime
 import re
-from collections import OrderedDict
 from pathlib import Path
 
 import pandas as pd
 from xlsxwriter.utility import xl_range, xl_col_to_name
 
 from models.wits_models import *
-
-# from .classes import Project, Well
+from .classes import Dt
 
 TEST = False
 RECORDS_COMPREHENSION = {
@@ -16,19 +14,6 @@ RECORDS_COMPREHENSION = {
     'record_11': 'Состояние емкостей',
     'record_12': 'Данные хромотографа'
 }
-
-
-# deprecated
-def get_date():
-    """
-    ---- Deprecated ---- 
-    You should use class DateLimit
-    :return: 
-    """
-    date1 = datetime.datetime.now()
-    diff = datetime.timedelta(weeks=2)
-    date2 = date1 - diff
-    return date1, date2
 
 
 def return_list_from_str(stri):
@@ -58,123 +43,132 @@ class DateLimit:
         return self._date_from
 
 
-class TableCreater:
+class TableCreator:
     def __init__(self, session, well_id, list_of_records, start, stop):
         self.session = session
         self.well_id = well_id
         self.list_of_records = list_of_records
-        self.start = start
-        self.stop = stop
-        # self.actc = self.get_actc()
+        self.start = Dt(start)
+        self.stop = Dt(stop)
+        self.tables = {}
+        self.well = Wits_well.query.filter_by(id=self.well_id).one()
+
+        self.actc = self.get_actc()
 
     @property
     def connect(self):
-        return self.session.connection()
+        return self.session().connection()
 
     def get_actc(self):
-        with self.connect as cn:
-            actc_table = pd.read_sql_query(Wits_activity_type.as_string(self.session), cn)
+        actc_table = pd.read_sql_query(Wits_activity_type.as_string(self.session), self.connect)
         actc_table.id = actc_table.id.apply(float)
         return actc_table
 
     def get_param_table(self, record_id):
-        with self.connect as cn:
-            well = Wits_well.query.filter_by(id=self.well_id).one()
-            param_table = pd.read_sql_query(well.get_param_table(record_id, as_string=True), cn)
+        param_table = pd.read_sql_query(self.well.get_param_table(record_id, as_string=True), self.connect)
         # Заменяем спецсимволы из базы
         for i in (('3', '&#179;'), ('2', '&#178;')):
             param_table.unit = param_table.unit.str.replace(i[1], i[0])
         return param_table
 
+    def get_data_tables(self, record_id):
+        # todo Переработать запросы и обсчитывать макс значения для каждого параметра для кажого ACTC на стороне базы
+        # tables = self.well.create_record_tables(record_id)
+        #
+        sql_query_idx = f'select id, ' \
+                        f'FROM_UNIXTIME(' \
+                        f'UNIX_TIMESTAMP(' \
+                        f'CONVERT_TZ(' \
+                        f'date, "+00:00", ' \
+                        f'(select logs_offset from WITS_WELL where wellbore_id={self.well.wellbore_id}))) ' \
+                        f'- ' \
+                        f'(select timeshift from WITS_WELL where wellbore_id={self.well.wellbore_id})) as date,' \
+                        f'depth ' \
+                        f'from WITS_RECORD{record_id}_IDX_{self.well.wellbore_id} ' \
+                        f'where date between "{self.start.to_string()}" and "{self.stop.to_string()}" '
 
-def get_data_tables(connect, record_id, wellbore_id):
-    # todo Переработать запросы и обсчитывать макс значения для каждого параметра для кажого ACTC на стороне базы
+        sql_query_idx_old = f'select id,date,depth from WITS_RECORD{record_id}_IDX_{self.well.wellbore_id} where ' \
+                            f'date between "{self.start.to_string()}" and "{self.stop.to_string()}" '
+        sql_query_data = f'select idx_id as id, mnemonic, value from ' \
+                         f'WITS_RECORD{record_id}_DATA_{self.well.wellbore_id} ' \
+                         f'where idx_id in ({sql_query_idx_old.replace(",date,depth", "")})'
+        #
+        # Получение данных
+        idx_table = pd.read_sql_query(sql_query_idx, self.connect, index_col='id', parse_dates=['date'])
 
-    date1, date2 = get_date()
-    sql_query_idx = 'select id, ' \
-                    'FROM_UNIXTIME(' \
-                    'UNIX_TIMESTAMP(' \
-                    'CONVERT_TZ(' \
-                    'date, "+00:00", (select logs_offset from WITS_WELL where wellbore_id={wb_id})' \
-                    ')) - (select timeshift from WITS_WELL where wellbore_id={wb_id})) as date,' \
-                    'depth ' \
-                    'from WITS_RECORD{r_id}_IDX_{wb_id} ' \
-                    'where date between "{d2:%Y-%m-%d %H:%M:%S}" and "{d1:%Y-%m-%d %H:%M:%S}" '. \
-        format(d2=date2, d1=date1, r_id=record_id, wb_id=wellbore_id, )
+        data_table = pd.read_sql_query(sql_query_data, self.connect)
+        # Разворачиваем таблицу, делая колонками мнемоники
+        data_table = data_table.pivot(index='id', columns='mnemonic', values='value')
+        # data_table.
+        # Мержим с индексой таблицей. Добовляем к каждому значению дату и глубину
+        merget_table = idx_table.merge(data_table, left_index=True, right_index=True)
 
-    sql_query_idx_old = 'select id,date,depth from WITS_RECORD{}_IDX_{} where ' \
-                        'date between "{:%Y-%m-%d %H:%M:%S}" and "{:%Y-%m-%d %H:%M:%S}" '. \
-        format(record_id, wellbore_id, date2, date1)
-    with connect as cn:
-        idx_table = pd.read_sql_query(sql_query_idx, cn, index_col='id', parse_dates=['date'])
-        sql_query_data = 'select idx_id as id, mnemonic, value from WITS_RECORD{}_DATA_{} ' \
-                         'where idx_id in ({})'. \
-            format(record_id, wellbore_id, sql_query_idx_old.replace(',date,depth', ''))
-        data_table = pd.read_sql_query(sql_query_data, cn)
-    # Разворачиваем таблицу, делая колонками мнемоники
-    data_table = data_table.pivot(index='id', columns='mnemonic', values='value')
-    # data_table.
-    # Мержим с индексой таблицей. Добовляем к каждому значению дату и глубину
-    merget_table = idx_table.merge(data_table, left_index=True, right_index=True)
+        return merget_table
 
-    return merget_table
+    def get_big_table(self, record_id):
+        data_dict = {}
+        table = self.get_data_tables(record_id)
+        table.fillna(0, inplace=True)
+        table.ACTC = table.ACTC.replace(self.actc.set_index('id').to_dict().get('name_ru'))
 
+        for column in table:
+            if column in ['depth', 'date', 'ACTC', 'ACTC2', 'DBTM', 'DRTM', 'DMEA']:
+                continue
+            # Создаём словарь из таблиц с min/max данными по каждому мнемонику, за исключением вышеописанных
+            data_dict[column] = pd.merge(
+                table.loc[table.groupby("ACTC")[column].idxmin()][['ACTC', 'date', column]].rename(
+                    columns={column: 'min', 'date': 'date_min'}),
+                table.loc[table.groupby("ACTC")[column].idxmax()][['ACTC', 'date', column]].rename(
+                    columns={column: 'max', 'date': 'date_max'}),
+                on='ACTC',
+                suffixes=('_min', '_max')).set_index('ACTC')
 
-def get_big_table(connect, actc_table, record_id, wellbore_id):
-    data_dict = {}
-    table = get_data_tables(connect, record_id, wellbore_id)
-    table.fillna(0, inplace=True)
-    table.ACTC = table.ACTC.replace(actc_table.set_index('id').to_dict().get('name_ru'))
+        datas = data_dict.values()
+        list_datas = list(datas)
+        big_table = pd.concat(list_datas, keys=data_dict.keys(), axis=1)
+        big_table = big_table.unstack().unstack().unstack()
+        return big_table
 
-    for column in table:
-        if column in ['depth', 'date', 'ACTC', 'ACTC2', 'DBTM', 'DRTM', 'DMEA']:
-            continue
-        # Создаём словарь из таблиц с min/max данными по каждому мнемонику, за исключением вышеописанных
-        data_dict[column] = pd.merge(
-            table.loc[table.groupby("ACTC")[column].idxmin()][['ACTC', 'date', column]].rename(
-                columns={column: 'min', 'date': 'date_min'}),
-            table.loc[table.groupby("ACTC")[column].idxmax()][['ACTC', 'date', column]].rename(
-                columns={column: 'max', 'date': 'date_max'}),
-            on='ACTC',
-            suffixes=('_min', '_max')).set_index('ACTC')
+    def return_work_table(self, param_table, record_id):
+        table = self.get_big_table(record_id)
 
-    datas = data_dict.values()
-    list_datas = list(datas)
-    big_table = pd.concat(list_datas, keys=data_dict.keys(), axis=1)
-    big_table = big_table.unstack().unstack().unstack()
-    return big_table
+        # ____-----debug-------------------------------------------------
+        def repiter(table, param_table):
+            ids_list = []
+            for mnem in table.index:
+                param = param_table[param_table['mnem'] == mnem]
+                try:
+                    ids = param.index
+                    ids_list.append(int(ids.get_values()[0]))
+                except Exception:
+                    raise ValueError(f'Didn`t found mnemonic: {mnem} in param_table for record {record_id}')
+            return ids_list
 
+        table.index = repiter(table, param_table)
+        # _--------------------------------------------------------------
+        #  Преобазуем мнемоники в id и сортируем по id
+        # table.index = [int(ids.get_values()[0]) for ids in
+        #                [param_table[param_table['mnem'] == mnem].index for mnem in table.index]]
+        # ________________________________________________________________
+        table.sort_index(inplace=True)
+        #  Отформатировали таблицу по параметрам
+        #  Преобразовываем параметры в называния и юниты
+        table.index = [' '.join([str(param_table['name'][ids]), str(param_table['unit'][ids])]) for ids in table.index]
+        table.columns.rename(names='Код технологического этапа', level=0, inplace=True)
+        table.index.name = 'Параметры'
 
-def return_work_table(connect, param_table, actc_table, record_id, wellbore_id):
-    table = get_big_table(connect, actc_table, record_id, wellbore_id)
+        return table
 
-    # ____-----debug-------------------------------------------------
-    def repiter(table, param_table):
-        ids_list = []
-        for mnem in table.index:
-            param = param_table[param_table['mnem'] == mnem]
-            try:
-                ids = param.index
-                ids_list.append(int(ids.get_values()[0]))
-            except Exception:
-                print('{}'.format(mnem))
-                exit(1)
-        return ids_list
-
-    table.index = repiter(table, param_table)
-    # _--------------------------------------------------------------
-    #  Преобазуем мнемоники в id и сортируем по id
-    # table.index = [int(ids.get_values()[0]) for ids in
-    #                [param_table[param_table['mnem'] == mnem].index for mnem in table.index]]
-    # ________________________________________________________________
-    table.sort_index(inplace=True)
-    #  Отформатировали таблицу по параметрам
-    #  Преобразовываем параметры в называния и юниты
-    table.index = [' '.join([str(param_table['name'][ids]), str(param_table['unit'][ids])]) for ids in table.index]
-    table.columns.rename(names='Код технологического этапа', level=0, inplace=True)
-    table.index.name = 'Параметры'
-
-    return table
+    def create_tables(self):
+        self.tables = {
+            'actc_table': self.actc,
+            'common_tables':
+                {'record_' + str(k): self.get_param_table(record_id=k) for k in self.list_of_records}
+        }
+        # Выгружаем и формируем табилцы из таблиц с данными.
+        self.tables['data_tables'] = {'record_' + str(k): self.return_work_table(
+            param_table=self.tables['common_tables'].get('record_' + str(k)),
+            record_id=k) for k in self.list_of_records}
 
 
 def write_param_sheet(writer, common_tables_dict):
@@ -233,10 +227,12 @@ def write_data_tables(writer, data_tables, formats):
                                                  'multi_range': ' '.join(full_datas)})
 
 
-def excel_writer(path_to_file, well_name, common_tables, data_tables):
+def excel_writer(path_to_file: str, network_id: int, well_name: str, common_tables: dict, data_tables: dict):
     # Записываем в фаил и форматируем как надо, пока фаил открыт.
     file_name = well_name.replace(' ', '_') + '.xlsx'
-    file_name = path_to_file.joinpath(file_name)
+    file_path = Path(path_to_file).joinpath(f'{network_id}')
+    if not file_path.exists(): file_path.mkdir(exist_ok=True)
+    file_name = file_path.joinpath(file_name)
     with pd.ExcelWriter(file_name.__str__(), engine='xlsxwriter', datetime_format='DD/MM/YY hh:mm:ss') as writer:
         book = writer.book
         #  Formats
@@ -250,65 +246,3 @@ def excel_writer(path_to_file, well_name, common_tables, data_tables):
 
         write_data_tables(writer, data_tables, formats)
         write_param_sheet(writer, common_tables)
-
-
-def param_for_customer(prj, well_name, list_of_records, path_to_file: Path('.')):
-    server = prj
-    well = Well(well_name, server)
-    # --------------------------------------------------------------
-
-    # Выгружаем и формируем дополнительные таблицы
-    tables = {
-        'actc_table': get_actc(server.session().connection()),
-        'common_tables':
-            OrderedDict(('record_' + str(k),
-                         get_param_table(
-                             connect=server.session().connection(),
-                             record_id=k,
-                             source_type_id=well.source_type_id
-                         )) for k in list_of_records)
-    }
-    # Выгружаем и формируем табилцы из таблиц с данными.
-    tables['data_tables'] = OrderedDict(('record_' + str(k),
-                                         return_work_table(
-                                             connect=server.session().connection(),
-                                             actc_table=tables['actc_table'],
-                                             param_table=tables['common_tables'].get('record_' + str(k)),
-                                             record_id=k,
-                                             wellbore_id=well.wb_id
-                                         )) for k in list_of_records)
-    # ---------------------------------------------------------------
-    # Отправляем таблицы на запись
-    excel_writer(path_to_file, well_name, tables['common_tables'], tables['data_tables'])
-    if TEST:
-        return tables
-
-
-def main(project_name: str, well_name: str, list_of_records=(1, 11, 12)):
-    # todo Прикрутить ключ -v --verbose для дебага SQLAlchemy
-    # todo Напилиты красивого вывода для скрипта
-    # todo Вынести конфиг отдельно
-    # todo Улучшить работу с памятью
-    # todo Прикрутить многопоточность
-    # todo Размапить таблицы и переписать всё на sqlalchemy орм
-    # todo Добавить logger
-    # ---------------------------------------------------------------
-    list_of_records = list(list_of_records)
-    list_of_records.sort()
-    # ---------------------------------------------------------------
-    # class_project = get_project_configs(project_name)
-    # ses = class_project.session()
-    # check_well(ses, well_name, list_of_records)
-    path_to_file = Path('/home/as/share/tables/param_for_customer/')
-    path_to_file = path_to_file if path_to_file.exists() else Path('/share')
-    param_for_customer(prj=class_project,
-                       well_name=well_name,
-                       list_of_records=list_of_records,
-                       path_to_file=path_to_file)
-
-
-if __name__ == '__main__':
-    project = 'bke'
-    well_name = 'Ардатовская к.1, 1'
-    list_of_records = [1, 11, 12]
-    main(project, well_name, list_of_records)

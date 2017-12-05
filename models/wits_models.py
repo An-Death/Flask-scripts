@@ -1,23 +1,27 @@
 from sqlalchemy import BLOB, DECIMAL, Enum
 from sqlalchemy import Integer, String, ForeignKey, Text, DateTime, Float, Boolean
 from sqlalchemy import Table, Column
-from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
-from sqlalchemy.sql.functions import now
+from sqlalchemy.sql.functions import now, coalesce
 
 Base = declarative_base()
 
 
-class Meta:
+class Meta(Base):
     __tablename__ = None
+    __abstract__ = True
 
     def __repr__(self):
         return ('<{}({})>'.format(self.__tablename__, ','.join(
             str(atr) for _, atr in self.__class__.__dict__.items() if not _.startswith('_'))))
 
+    @classmethod
+    def as_string(cls, session):
+        return cls.query.statement.compile(compile_kwargs={"literal_binds": True}, dialect=session.bind.dialect)
 
-class Wits_network(Base, Meta):
+
+class Wits_network(Meta):
     __tablename__ = 'WITS_NETWORK'
 
     id = Column('id', Integer, primary_key=True, nullable=False,
@@ -30,8 +34,7 @@ class Wits_network(Base, Meta):
     logo = Column('logo', BLOB)
 
 
-
-class Wits_user(Base, Meta):
+class Wits_user(Meta):
     __tablename__ = 'WITS_USER'
 
     id = Column('id', Integer, primary_key=True, nullable=False,
@@ -58,8 +61,7 @@ class Wits_user(Base, Meta):
     network = relationship('Wits_network', backref='users')
 
 
-
-class Wits_user_log(Base, Meta):
+class Wits_user_log(Meta):
     __tablename__ = 'WITS_USER_LOG'
 
     user_id = Column('user_id', Integer, ForeignKey('WITS_USER.id'), primary_key=True, autoincrement=True)
@@ -72,7 +74,7 @@ class Wits_user_log(Base, Meta):
     user = relationship('Wits_user', backref='sessions')
 
 
-class Wits_user_event(Base, Meta):
+class Wits_user_event(Meta):
     __tablename__ = 'WITS_USER_EVENT'
 
     id = Column('id', Integer, primary_key=True)
@@ -80,7 +82,7 @@ class Wits_user_event(Base, Meta):
     name_en = Column('name_en', String(255))
 
 
-class Wits_user_group(Base, Meta):
+class Wits_user_group(Meta):
     __tablename__ = 'WITS_USER_GROUP'
 
     id = Column('id', Integer, primary_key=True, autoincrement=True)
@@ -90,7 +92,7 @@ class Wits_user_group(Base, Meta):
     network = relationship('Wits_network', backref='user_groups')
 
 
-class Wits_source(Base, Meta):
+class Wits_source(Meta):
     __tablename__ = 'WITS_SOURCE'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -110,7 +112,7 @@ class Wits_source(Base, Meta):
     network = relationship('Wits_network', backref='boxes')
 
 
-class Wits_source_type(Base, Meta):
+class Wits_source_type(Meta):
     __tablename__ = 'WITS_SOURCE_TYPE'
 
     id = Column('id', Integer, primary_key=True, nullable=False)
@@ -119,8 +121,18 @@ class Wits_source_type(Base, Meta):
     producer = Column('producer', String(255))
 
 
+class Wits_activity_type(Meta):
+    __tablename__ = 'WITS_ACTIVITY_TYPE'
 
-class Wits_well(Base, Meta):
+    id = Column('id', Float, primary_key=True, nullable=False)
+    name_en = Column('name_en', String(32), nullable=False, default='Undefined Status')
+    name_ru = Column('name_ru', String(32))
+    descr_en = Column('descr_en', String(255), nullable=False, default='Anything not covered by other activity codes.')
+    descr_ru = Column('descr_ru', String(255))
+    chart_color = Column('chart_color', String(6))
+
+
+class Wits_well(Meta):
     __tablename__ = 'WITS_WELL'
     # __table_args__ = {'extend_existing': True}
 
@@ -176,15 +188,17 @@ class Wits_well(Base, Meta):
     def record_tables(self):
         return {self.tables[i] for i in self.tables.keys() if isinstance(i, int)}
 
-    def check_record_tables(self, record):
+    def create_record_tables(self, record):
         record_tables = {'idx': f'WITS_RECORD{record}_IDX_{self.wellbore_id}',
                          'data': f'WITS_RECORD{record}_DATA_{self.wellbore_id}'}
-
         mapper = TableMapper(engine=self.session.bind)
         tables = {k: mapper.return_mapped_table(table) for k, table in record_tables.items()}
         for k, v in tables.items():
             self._add_related_table(k, v, record=record)
+        return tables
 
+    def check_record_tables(self, record):
+        tables = self.create_record_tables(record)
         return None if None in tables.values() else True
 
     def check_idx_in_record_table(self, record, start, stop):
@@ -205,8 +219,24 @@ class Wits_well(Base, Meta):
 
         return q.all()
 
+    def get_param_table(self, record_id, as_string=False):
 
-class Wits_well_group(Base, Meta):
+        q = self.session.query(
+            Wits_source_param.mnemonic.label('mnem'),
+            coalesce(Wits_unit.name_ru, Wits_unit.name_en).label('unit'),
+            Wits_param.name_ru.label('name')
+        )
+        q = q.outerjoin(Wits_param).outerjoin(Wits_unit)
+        q = q.filter(Wits_source_param.source_type_id == self.source_type_id)
+        q = q.filter(Wits_source_param.record_id == record_id)
+        q = q.order_by(Wits_source_param.record_id, Wits_source_param.param_num)
+        if as_string:
+            return q.statement.compile(compile_kwargs={"literal_binds": True}, dialect=self.session.bind.dialect)
+        else:
+            return q.all()
+
+
+class Wits_well_group(Meta):
     __tablename__ = 'WITS_WELL_GROUP'
 
     id = Column('id', Integer, primary_key=True, nullable=False)
@@ -219,7 +249,7 @@ class Wits_well_group(Base, Meta):
     network = relationship('Wits_network', backref='well_groups')
 
 
-class Wits_well_prop(Base, Meta):
+class Wits_well_prop(Meta):
     __tablename__ = 'WITS_WELL_PROP'
 
     well_id = Column(Integer, ForeignKey('WITS_WELL.id'), primary_key=True, nullable=False)
@@ -252,8 +282,7 @@ class Wits_well_prop(Base, Meta):
     group = relationship('Wits_well_group', backref='wells')
 
 
-
-class Wits_wellbore(Base, Meta):
+class Wits_wellbore(Meta):
     __tablename__ = 'WITS_WELLBORE'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -278,7 +307,7 @@ class Wits_wellbore(Base, Meta):
     source_type = relationship('Wits_source_type', backref='wellbores')
 
 
-class Wits_source_param(Base, Meta):
+class Wits_source_param(Meta):
     __tablename__ = 'WITS_SOURCE_PARAM'
 
     source_type_id = Column('source_type_id', Integer, ForeignKey('WITS_SOURCE_TYPE.id'), primary_key=True,
@@ -286,15 +315,15 @@ class Wits_source_param(Base, Meta):
     record_id = Column('record_id', Integer, ForeignKey(''), primary_key=True, nullable=False)
     param_num = Column('param_num', Integer, primary_key=True, nullable=False)
     mnemonic = Column('mnemonic', String(25), ForeignKey('WITS_PARAM.mnemonic'), nullable=False)
-    unit_id = Column('unit_id', Integer)
+    unit_id = Column('unit_id', Integer, ForeignKey('WITS_UNIT.id'))
     required = Column('required', Boolean, default=False)
     depth_curve = Column('depth_curve', String(25))
 
 
-class Wits_param(Base, Meta):
+class Wits_param(Meta):
     __tablename__ = 'WITS_PARAM'
 
-    mnemonic = Column('mnemonic', String(25), ForeignKey('WITS_SOURCE_PARAM.mnemonic'), primary_key=True,
+    mnemonic = Column('mnemonic', String(25), primary_key=True,
                       nullable=False)
     name_en = Column('name_en', String(255), nullable=False)
     name_ru = Column('name_ru', String(255))
@@ -304,7 +333,7 @@ class Wits_param(Base, Meta):
     value_max = Column('value_max', Float)
 
 
-class Wits_unit(Base, Meta):
+class Wits_unit(Meta):
     __tablename__ = 'WITS_UNIT'
 
     id = Column('id', Integer, primary_key=True, autoincrement=True, nullable=False)
@@ -318,7 +347,6 @@ class Wits_unit(Base, Meta):
     main_unit_id = Column('main_unit_id', Integer)  # todo make sa.Table for convert values
     default_ru = Column('default_ru', Integer)
     default_en = Column('default_en', Integer)
-
 
 
 class Wits_record:
@@ -336,5 +364,5 @@ class TableMapper:
             return None
         else:
             table = Table(name, self.meta, autoload=True)
-        insp = Inspector.from_engine(self.engine)
+        # insp = Inspector.from_engine(self.engine)
         return table

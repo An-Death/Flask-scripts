@@ -1,206 +1,91 @@
-#!/usr/bin/python3
-# -*- coding: utf-8 -*-
-from pathlib import Path
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from datetime import datetime, timedelta
 
-path_to_config_file = '.bash_connection_info.sh'
-CONFIGS = Path(path_to_config_file)
 
-class MetaProject():
-    """Meta info for Projects
-    """
+class Meta:
+    def __repr__(self):
+        return '<class.{}({})>'.format(self.__class__.__name__, self.__str__())
 
-    def __init__(self, shortcut):
-        """
-        При создании объекта передаём один из вариантов его названия.
-        :param shortcut:
-        """
-        self.shortcut = shortcut
+
+class Dt(Meta):
+    formats = {'date': '%Y-%m-%d', 'datetime': '%Y-%m-%d %H:%M:%S'}
+
+    def __init__(self, dt):
+        if isinstance(dt, Dt):
+            self.dt = dt.to_timestamp()
+        elif isinstance(dt, int):
+            if len(str(dt)) > 10:
+                dt = int(str(dt)[:10])
+            self.dt = dt
+        elif isinstance(dt, datetime):
+            self.dt = int(datetime.timestamp(dt))
+        elif isinstance(dt, str):
+            if dt.isdigit():
+                self.dt = int(dt[:10])
+            elif len(dt) > 10:
+                try:
+                    self.dt = datetime.strptime(dt, Dt.formats['datetime']).timestamp()
+                except ValueError:
+                    self.dt = datetime.strptime(dt, Dt.formats['datetime'] + '.%f').timestamp()
+                self.dt = int(self.dt)
+            else:
+                self.dt = datetime.strptime(dt, Dt.formats['date']).timestamp()
+                self.dt = int(self.dt)
+        else:
+            raise ValueError('Не получилось распознать dt {}, type({})'.format(dt, type(dt)))
 
     def __str__(self):
-        prj = [
-            ' Project {} '.format(self.name).center(70, '-'),
-            'Main INFO:',
-            'host: {},  host2: {}, port: {}'.format(self.host, self.host2, self.port),
-            'VPN: {}, DNS: {}'.format(self.vpn, self.dns),
-            'Monitoring INFO:',
-            'URL: {}, URL2: {}'.format(self.url, self.url2),
-            #  monitoring login, pass
-            'Send_to_Address: {}, Send_to_Port: {}'.format(self.send_to_address, self.send_to_port),
-            'SSH INFO:',
-            'Ssh_user: {}, Ssh_pass: {}'.format(self.login, self.password),
-            'Connection: "{}"'.format('sshpass -p {} ssh -o StrictHostKeyChecking=no {}@{} -p{}'.
-                                      format(self.password,
-                                             self.login,
-                                             self.host,
-                                             self.port)),
-            'Path_to_stream: {}'.format(self.stream_path),
-            'Path_to_reporting: {}'.format(self.report_path),
-            'SQL INFO:',
-            'Login: {}, Pass: {}, Base_name: {}, Port: {}, Gate: {}'.format(
-                self.db_login,
-                self.db_password,
-                self.db_name,
-                self.db_port,
-                self.db_host
-            ),
-            'SQL_Connection: "{}"'.format(
-                'mysql --default-character-set=utf8 --safe-updates -h {} -P {} -u{} -p{} {} -A'.
-                    format(
-                    self.db_host,
-                    self.db_port,
-                    self.db_login,
-                    self.db_password,
-                    self.db_name
-                ))
-        ]
-        return '\n'.join(prj)
+        year = Dt('2000-01-01').to_timestamp()
+        return self.to_string() if self.dt > year else self.to_human()
 
-    def __repr__(self):
-        return '<{}({})'.format(self.name, ','.join([self.host, self.port, self.login, self.password]))
+    def __float__(self):
+        return float(self.dt)
 
-    def fill(self):
-        """
-        Заполняем объект полями доступными в .bash_connection_info.sh
-        :return:
-        """
-        start = None
-        attribs = []
-        dict_of_attr = {}
-        with open(CONFIGS, 'r', encoding='utf-8') as fd:
-            for line in fd.readlines():
-                if line.startswith(r'  #'):
-                    continue
-                if self.shortcut in line and line.endswith(')\n'):
-                    start = True
-                    self.shortcuts = line.rstrip(')\n').strip().split('|')
-                    continue
-                if start and line.endswith(';;\n'):
-                    break
-                if start:
-                    list_of_attrs = line.strip().replace('\n', '').replace('"', '').split(';')
-                    list_of_attrs.remove('')
-                    attribs.append(list_of_attrs)
-        attribs = sum(attribs, [])
-        for attrib in attribs:
-            k, v = attrib.split('=')
-            dict_of_attr[k.strip()] = v.strip()
-        # _default_
-        _def_str = 'unspecified'.upper()
-        _def_ssh = '22'
-        _def_mon = '4341'
-        _def_db_name = 'WMLS'
-        _def_db_log = 'gtionline'
-        _def_db_pass = 'tetraroot'
-        _def_db_port = '3306'
-        _def_db_host = '192.168.0.100'
-        #
-        self.name = dict_of_attr.get('projectName', _def_str)
-        self.host = dict_of_attr.get('serverIP', _def_str)
-        self.host2 = dict_of_attr.get('serverIP2', _def_str)
-        self.port = dict_of_attr.get('sshPortForServer', _def_ssh)
-        self.vpn = dict_of_attr.get('vpnServerIp', _def_str)
-        self.dns = dict_of_attr.get('serverNameInDNS', _def_str)
-        self.url = dict_of_attr.get('monitoringAdress', _def_str)
-        self.url2 = dict_of_attr.get('monitoringAdress2', _def_str)
-        self.send_to_address = dict_of_attr.get('sendToAddress', _def_str)
-        self.send_to_port = dict_of_attr.get('sendToPort', _def_mon)
-        self.login = dict_of_attr.get('loginForServer', _def_str)
-        self.password = dict_of_attr.get('passwordForServer', _def_str)
-        self.stream_path = dict_of_attr.get('pathToStream', _def_str)
-        self.report_path = dict_of_attr.get('pathToReporting', _def_str)
-        self.db_login = dict_of_attr.get('loginForSQLBase', _def_db_log)
-        self.db_password = dict_of_attr.get('passwordSQLBase', _def_db_pass)
-        self.db_port = dict_of_attr.get('portSQL', _def_db_port)
-        self.db_name = dict_of_attr.get('baseNameSQL', _def_db_name)
-        self.db_host = dict_of_attr.get('sqlGateIp', _def_db_host)
-        self.encryptPK = dict_of_attr.get('encryptPK', _def_str)
-        self.encryptLK = dict_of_attr.get('encryptLK', _def_str)
+    def __sub__(self, other):
+        if isinstance(other, Dt):
+            other = other.dt
+        return Dt(self.dt - other)
 
+    def __int__(self):
+        return self.to_timestamp()
 
-    def sql_engine(self, loging=False):
-        """
-        Создаём движок для подключения к базе на основе движка sqlalchemy
-        :return: self.engine
-        """
+    def __add__(self, other):
+        if isinstance(other, Dt):
+            other = other.dt
+        elif isinstance(other, str) and other.isdigit():
+            other = int(other)
+        return Dt(self.dt + other)
 
-        user = self.db_login
-        password = self.db_password
-        host = self.db_host
-        bname = self.db_name
-        port = self.db_port
-        engine_str = 'mysql+pymysql://{u}:{p}@{h}{port}/{b_name}?charset=utf8&use_unicode=1'.format(
-            u=user,
-            p=password,
-            h=host,
-            port='' if port is None or '' else ':' + str(port),
-            b_name=bname
-        )
-        self.engine = create_engine(engine_str, convert_unicode=True, echo=loging)
-        # self.engine = engine
-        # return engine
+    def __ge__(self, other):
+        if isinstance(other, Dt):
+            other = other.dt
+        return self.dt >= other
 
-    def sql_session_maker(self, engine):
-        self.session = sessionmaker()
-        self.session.configure(bind=engine)
+    def to_string(self):
+        return datetime.fromtimestamp(self.dt).strftime(Dt.formats['datetime'])
 
-class Project(MetaProject):
-    def info(self):
-        print(MetaProject.__str__(self))
+    def to_timestamp(self):
+        return int(self.dt)
 
-    def sql_execute(self, sql_command):
-        """
-        Передаём запрос, и получаем ответ.
-        :param sql_command:
-        :return: list
-        """
-        with self.engine.connect() as cn:
-            res = cn.execute(sql_command).fetchall()
-        return res
+    def to_request(self):
+        return self.to_timestamp() * 1000
 
+    def to_human(self):
+        return str(timedelta(seconds=self.dt))  # + ' с'
 
-class Well():
-    def __init__(self, name, server):
-        self.name = name
-        sql_req = 'select ' \
-                  'w.id as w_id, wellbore_id, w.source_id, w.created_date, w.modified_date as last_update,  COALESCE( w.alias, w.name) as name, ' \
-                  'w.alias, s.product_key, s.type_id, st.name_en as station ' \
-                  'from WITS_WELL w join WITS_SOURCE s on (s.id = w.source_id) ' \
-                  'join WITS_SOURCE_TYPE st on (s.type_id=st.id) ' \
-                  'where w.name = "{}"'.format(self.name)
-        res = server.sql_execute(sql_req)[0]
-        self.w_id = res.w_id
-        self.wb_id = res.wellbore_id
-        self.source_id = res.source_id
-        self.source_type_id = res.type_id
-        self.alias = res.alias
-        self.created_date = res.created_date
-        self.last_update = res.last_update
-        self.product_key = res.product_key
-        self.gbox = res.product_key.split('-')[1]
-        self.station = res.station
-        self.host = res.product_key.rsplit('-')[0].lower
-        # todo Добавить Company and network_id
+    @staticmethod
+    def to_report(dt_1: int, dt_2=0):
+        """Возвращаем месяц и год для сессии"""
+        if isinstance(dt_1, int):
+            dt_1 = Dt(dt_1)
+        if isinstance(dt_2, int):
+            dt_2 = Dt(dt_2)
+        start = dt_1.dt
+        stop = dt_2.dt
+        median = (start + stop) / 2
+        dt = datetime.fromtimestamp(median)
+        return dt.strftime('%B %Y')
 
-
-def test():
-    prj_list = ['cb', 'bke', 'nova', 'st', 'ggr', 'igs', 'eriell', 'gk']
-    for prj in prj_list:
-        p = Project(prj)
-        p.fill()
-        p.sql_engine()
-        # p.info()
-        assert p.name != 'UNSPECIFIED'
-        assert p.engine
-        # print(st)
-    project = Project('st')
-    project.fill()
-    project.sql_engine()
-    well = Well('Требса к.8, 1', project)
-    assert well.w_id
-    # st.engine.execute('desc WITS_SOURCE')
 
 
 if __name__ == '__main__':
-    test()
+    print(Dt('2017-12-03 23:41:17.906832'))
