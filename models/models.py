@@ -88,15 +88,23 @@ class Project(Meta):
     def shortcut(self):
         return self.server.shortcut
 
+    @classmethod
+    def get(cls, network_id):
+        return cls.query.get_or_404(network_id)
+
+    @classmethod
+    def all_supported(cls):
+        return cls.query.filter_by(supported=True).all()
+
     def get_active_wells(self):
         Base.query = self.sqlsession.query_property()
 
         return well.query.join(source).join(prop).filter(source.network_id == self.network_id). \
-            filter(well.id > 0).filter(prop.status_id == 3).order_by(prop.group_id.desc()).all()
+            filter(well.id > 0).filter(prop.status_id == 3).order_by(prop.group_id.desc(), well.id).all()
 
     def get_well_by_id(self, well_id):
         Base.query = self.sqlsession.query_property()
-        return well.query.filter(well.id == well_id).all()
+        return well.query.get(well_id)
 
 class Server_connection_info(Meta):
     __tablename__ = 'server_connection_info'
