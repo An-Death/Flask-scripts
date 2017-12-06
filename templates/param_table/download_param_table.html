@@ -23,7 +23,7 @@
             <br>
             <p>Формирование отчёта может занять достаточно продолжительное время...<br>Скачивание отчёта начнётся
                 автоматически после формирования...</p>
-            {% if vars.get('file') %}
+            {% if vars.get('upload') %}
                 <p>Если отчёт уже создан, можете скачать уже созданный:</p>
                 <a id="downloadLink" class="buttonDownload"
                    href="{{ url_for('.download', network_id = vars.get('project').network_id, well_id = vars.get('well').id) }}">Download</a>

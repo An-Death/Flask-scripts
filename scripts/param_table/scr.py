@@ -26,9 +26,9 @@ def return_list_from_str(stri):
 
 
 def check_file_exists(network_id, well_id, path_to_file):
-    file_name = well_id.replace(' ', '_') + '.xlsx'
+    file_name = f'{well_id}.xlsx'
     file_path = Path(path_to_file).joinpath(f'{network_id}').joinpath(file_name)
-    return file_path.exists()
+    return file_path.is_file()
 
 class DateLimit:
     def __init__(self, val=2, limit='days'):
@@ -49,6 +49,9 @@ class DateLimit:
 
 
 class TableCreator:
+    # todo сделать асинхронным
+    # todo сделать перевод значений из кПа в атм
+
     def __init__(self, session, well_id, list_of_records, start, stop):
         self.session = session
         self.well_id = well_id

@@ -1,6 +1,7 @@
 from pathlib import Path
 
-from flask import Blueprint, request, render_template, send_file, url_for, redirect, flash, abort
+from flask import Blueprint, request, render_template, url_for, redirect, flash, abort
+from flask import send_from_directory
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import exc
 
@@ -116,11 +117,10 @@ def download(network_id=None, well_id=None):
     if request.method == 'GET':
         well_id = well_id or request.values.get('well_id')
         network_id = network_id or request.values.get('network_id')
-        return redirect(url_for('.file', network_id=network_id, well_id=well_id))
+        return redirect(url_for('.upload', network_id=network_id, file_name=well_id))
     elif request.method == 'POST':
         # todo Вынести выполнение функции в отдельный тред
-        # todo Отлавливать остановки
-        # todo Возвращать фаил в браузер после выполнения
+        # todo Отлавливать остановки, выводить причины
         network_id = network_id or request.values.get('network_id')
         project = Project.query.filter(Project.network_id == network_id).one()
         well_id = request.values.get('well_id')
@@ -130,34 +130,37 @@ def download(network_id=None, well_id=None):
         table = scr.TableCreator(project.sqlsession, well_id, list_of_records, limit_from, limit_to)
         # Создаём таблицы
         table.create_tables()
-        scr.excel_writer(path_to_file=app.config['PARAM_TABLE_DIR_PATH'],
-                         well_id=table.well_id,
-                         common_tables=table.tables['common_tables'],
-                         data_tables=table.tables['data_tables'],
-                         network_id=request.values.get('network_id'))
+        scr.excel_writer(
+            path_to_file=app.config['PARAM_TABLE_DIR_PATH'],
+            well_id=well_id,
+            common_tables=table.tables['common_tables'],
+            data_tables=table.tables['data_tables'],
+            network_id=network_id
+        )
+
         done = True
-        if scr.check_file_exists(network_id, well_id, app.config['PARAM_TABLE_DIR_PATH']): file = True
+        if scr.check_file_exists(network_id, well_id, app.config['PARAM_TABLE_DIR_PATH']):
+            file = True
+
         return render_template('param_table/download_param_table.html', vars=locals())
     else:
         flash('UNEXCEPTIONAL ERROR')
         return abort(404)
 
 
-@pt.route('/file/<int:network_id>/<well_id>')
-def file(network_id, well_id):
-    file_name = f'{well_id}.xlsx'
-    # file_path = Path('/home/as/share/tables/param_for_customer')  # for test
-    # file_path = file_path if file_path.exists() else Path('/share')  # for docker
-    project = Project.query.filter_by(network_id=network_id).one()
-
+@pt.route('/upload/<path:network_id>/<path:file_name>')
+def upload(network_id, file_name):
     file_path = app.config['PARAM_TABLE_DIR_PATH']
-    file_path = Path(file_path).joinpath(f'{network_id}').joinpath(file_name)
+    file_path = Path(file_path).joinpath(f'{network_id}')
     if file_path.exists():
-        well = project.get_well_by_id(well_id)
+        well = Project.get(network_id).get_well_by_id(file_name)
+        file_name = f'{file_name}.xlsx'
         attachment_filename = f'{well.name.replace(" ", "_")}.xlsx'.encode('utf-8')
-        return send_file(file_path.__str__(), as_attachment=True,
-                         mimetype='text/xlsx; charset=utf-8',
-                         attachment_filename=attachment_filename)
+        return send_from_directory(file_path, file_name,
+                                   as_attachment=True,
+                                   mimetype='text/xlsx; charset=utf-8',
+                                   attachment_filename=attachment_filename)
+
     else:
         flash(f'Файла отчёта {file_name} нет, создайте фаил.')
         return redirect(redirect_url('.param_table'))
