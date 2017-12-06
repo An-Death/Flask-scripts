@@ -1,0 +1,45 @@
+{% extends 'meta.html' %}
+{% block extra_styles %}
+    <link rel=stylesheet type=text/css href="{{ url_for('static', filename='button.css') }}">
+{% endblock %}
+
+
+{% block content %}
+    {% if vars.get('projects') %}
+        <h1>Выберите проект</h1>
+        {% from "forms/macros.html" import render_field %}
+        {% for project in vars.get('projects') %}
+            <div class="project">
+                {% if (vars.get('network_id')| int) == project.network_id %}
+                    <form class="param_table_form" action="{{ url_for('.user_report', network_id=project.network_id) }}"
+                          method="post">
+                        <fieldset>
+                            <input class="radio_item" id="pr{{ project.id }}" name="project_name" type="radio"
+                                   value="{{ project.network_id }}" checked/>
+                            <label class="project_name" for="pr{{ project.id }}">{{ project.name_ru }}</label><br>
+                            {{ vars.get('form').csrf_token }}
+                            <p>Выберите промежуток для отчёта:</p>
+                            {{ render_field(vars.get('form').date_from, min="2012-12-01", max="2145-01-08") }}
+                            {{ render_field(vars.get('form').date_to, min="2012-12-01", max="2145-01-08") }}
+                            <input class="create_report" id="create_report" type="submit"
+                                   value="Сформировать отчёт"
+                                   onclick="change('create_report', 'Сформировать отчёт', 'Формирую')">
+                        </fieldset>
+                    </form>
+                {% else %}
+                    <a class='project'
+                       href="{{ url_for('.user_report', network_id=project.network_id) }}">{{ project.name_ru }}</a>
+                    <br>
+                {% endif %}
+            </div>
+        {% endfor %}
+    {% else %}
+        <h1>Активных проектов нет</h1>
+    {% endif %}
+
+{% endblock %}
+{#        <h1>Выбран проект {{ vars.get('project').name_ru }}</h1>#}
+{#        <h2>Это {{ vars.get('__title__') }}</h2>#}
+{#        {% if vars.get('post') %}#}
+{#            <a class="buttonDownload" href="{{ url_for('download', method='user_report') }}">Download</a>#}
+{#            {{ vars.get('table') | safe }}#}

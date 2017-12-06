@@ -9,5 +9,5 @@ default_dt_from = lambda: (datetime.today() - timedelta(weeks=12)).replace(day=1
 default_dt_to = lambda: datetime.today().replace(day=1)
 
 class ChoseDateForm(FlaskForm):
-    date_from = DateField('From', validators=[DataRequired()], default=default_dt_from)
-    date_to = DateField('To', validators=[DataRequired()], default=default_dt_to)
+    date_from = DateField('Начало', validators=[DataRequired()], default=default_dt_from)
+    date_to = DateField('Конец', validators=[DataRequired()], default=default_dt_to)
