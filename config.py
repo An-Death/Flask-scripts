@@ -21,4 +21,4 @@ class Ops(Configuration):
     SQLALCHEMY_DATABASE_URI = database.Ops.SQLALCHEMY_DATABASE_URI
     PARAM_TABLE_DIR_PATH = '/share/param_table'
     USER_ACTIVITY_DIR_PATH = '/share/activity_table'
-    LOG_FILE = '/share/support_scripts.log'
+    LOG_FILE = 'support_scripts.log'

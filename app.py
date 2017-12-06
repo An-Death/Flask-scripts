@@ -1,13 +1,19 @@
+import os
+
 from flask import Flask
 from flask_cache import Cache
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.routing import BaseConverter
 
-from config import Ops
+from config import Ops, Dev
 
 app = Flask(__name__)
-app.secret_key = Ops.SECRET_KEY
-app.config.from_object(Ops)
+if os.environ.get('SUPPORT_SCRIPTS_EXEC') == "Dev":
+    app.secret_key = Dev.SECRET_KEY
+    app.config.from_object(Dev)
+else:
+    app.secret_key = Ops.SECRET_KEY
+    app.config.from_object(Ops)
 
 
 if not app.debug:
