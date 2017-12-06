@@ -14,12 +14,16 @@ if not app.debug:
     import logging
     from logging.handlers import RotatingFileHandler
 
-    file_handler = RotatingFileHandler('support_scripts.log', 'a', 1 * 1024 ** 3, 3)
+    file_handler = RotatingFileHandler(app.config['LOG_FILE'], 'a', 1 * 1024 ** 3, 3)
     file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'))
-    app.logger.setLevel(logging.INFO)
-    file_handler.setLevel(logging.INFO)
-    app.logger.addFilter(file_handler)
+    app.logger.setLevel(logging.DEBUG)
+    file_handler.setLevel(logging.DEBUG)
+    app.logger.addHandler(file_handler)
     app.logger.info('support_scripts started')
+
+    log = logging.getLogger('werkzeug')
+    log.setLevel(logging.DEBUG)
+    log.addHandler(file_handler)
 
 db = SQLAlchemy(app)
 cache = Cache(app, config={'CACHE_TYPE': 'simple'})
