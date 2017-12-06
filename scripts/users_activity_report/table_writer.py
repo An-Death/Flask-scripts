@@ -1,8 +1,10 @@
 from itertools import chain
+from pathlib import Path
 
 import pandas as pd
-from users_report import aliases
 from xlsxwriter.utility import xl_range
+
+from .users_report import aliases
 
 DEFAULT_HEADER_VIDEO = 'Использование видеонаблюдения GTI-Online'
 DEFAULT_HEADER_TOTAL = 'Использование мониторинга GTI-Online'
@@ -98,11 +100,12 @@ def write_sheet(sheet_name, writer, table):
                                     'format': formats['clean']})
 
 
-def create_xlsx(file_name, users_table, video_table, activity_table):
+def create_report(file_name, users_table, video_table, total_table):
+    Path(Path(file_name).parent).mkdir(exist_ok=True)
     with pd.ExcelWriter(file_name, engine='xlsxwriter') as writer:
         write_sheet('Пользователи', writer, users_table)
         write_sheet('Видео', writer, video_table)
-        write_sheet('Общее', writer, activity_table)
+        write_sheet('Общее', writer, total_table)
 
 
 def main():

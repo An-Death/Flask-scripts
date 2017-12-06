@@ -4,20 +4,20 @@ from collections import OrderedDict
 from collections import defaultdict
 
 import pandas as pd
-from classes import User, Dt, sort_by_month
-from table_writer import create_xlsx
-from users_report import get_table
 
 from models.wits_models import (Wits_user_log as log,
                                 Wits_user_event as event)
-from projects.project import get_connect_to_db
+from .classes import User, Dt, sort_by_month
+from .table_writer import create_report
+from .users_report import get_table
 
 # todo Сделать вводом из формы или cli
 FROM = '2017-08-31'
 TO = '2017-12-01'
 PROJECT = 'bke'
+
+
 ######################################################################
-USERS = defaultdict(User)
 
 
 def apply_nested(func, lst, isatom=lambda item: not isinstance(item, list)):
@@ -33,7 +33,7 @@ def get_events_table(session):
     """
     Дёргаем из базы таблицу WITS_USER_EVENT и приобразуем её в словарь
     :param session: 
-    :return: Dict('Stop': 7)
+    :return: Dict(соотношение имени и id)
     """
     event_table = session.query(event.id, event.name_en).all()
     return {name: _id for _id, name in event_table}
@@ -116,11 +116,13 @@ def prepare_table(users, data_dict):
     return merged
 
 
-def main(u: USERS, p: PROJECT):
-    limit = {'start': Dt(FROM), 'stop': Dt(TO)}
+def main(session, start: str, stop: str):
+    u = defaultdict(User)
+
+    limit = {'start': Dt(start), 'stop': Dt(stop)}
 
     # Создаём сессию подключения к базе, передавая шорткат проекта
-    dbconnection = get_connect_to_db(p)
+    dbconnection = session
     # Дёргаем из базы таблицу WITS_USER_EVENT и приобразуем её в словарь
     event_dict = get_events_table(dbconnection)
     # Возвращаем список всез записей из WITS_USER_LOG в пределах limits
@@ -176,9 +178,11 @@ def main(u: USERS, p: PROJECT):
     video_dict, total_dict = users_activity_as_dict(u)
     video_table = prepare_table(u, video_dict)
     total_table = prepare_table(u, total_dict)
-
-    create_xlsx('reports/Список пользователей GTI-online.xlsx', user_table, video_table, total_table)
+    return user_table, video_table, total_table
 
 
 if __name__ == '__main__':
-    main(USERS, PROJECT)
+    from models.models import Project
+
+    user_table, video_table, total_table = main(Project.get(2), FROM, TO)
+    create_report('TEST|Список пользователей GTI-online.xlsx', user_table, video_table, total_table)

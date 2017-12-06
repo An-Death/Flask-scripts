@@ -1,11 +1,10 @@
-from pathlib import Path
-
-from flask import Blueprint, request, render_template, send_from_directory, flash, redirect, url_for
+from flask import Blueprint, request, render_template, send_from_directory
 
 from app import app
 from models.models import *
 from .forms import ChoseDateForm
-from .users_report import get_table
+# from .users_report import get_table
+from .user_activity_report import main, create_report
 
 at = Blueprint('user_activity_table', __name__, url_prefix='/scripts/user_activity_table')
 
@@ -18,29 +17,28 @@ def user_report(network_id=None):
     projects = Project.all_supported()
 
     if form.validate_on_submit():
+        ready = True  # def are_file_ready?
         project = Project.get(network_id)
-        period_start = form.date_from
-        period_stop = form.date_to
-        serv = Server.query.filter(Server.id == project.server_id).one()
-        table = get_table(project.sqlsession)
-        table = table.to_html()
-        return render_template('users_activity_report/table.html', vars=locals())
-        # todo Заставить формировать отчёт
+        period_start = form.data.get('date_from')
+        period_stop = form.data.get('date_to')
+        check = form.data.get('check')
+        file_name = f'{network_id}/{period_start}_{period_stop}.xlsx'
+        # создаём таблицы
+        user_table, video_table, total_table = main(project.sqlsession, period_start, period_stop)
+        if check:
+            return render_template('users_activity_report/table.html', vars=locals())
+        # записываем в фаил
+        create_report(app.config['USER_ACTIVITY_DIR_PATH'] + file_name, user_table, video_table, total_table)
+        # return redirect(url_for('.upload', file_name=file_name))
+
     return render_template('users_activity_report/user_report.html', vars=locals())
 
 
-@at.route('/upload/<path:network_id>/<path:file_name>')
-def upload(network_id, file_name):
+@at.route('/upload/<path:file_name>')
+def upload(file_name):
     file_path = app.config['USER_ACTIVITY_DIR_PATH']
-    file_path = Path(file_path).joinpath(f'{network_id}')
-    if file_path.exists():
-        file_name = f'{file_name}.xlsx'
-        attachment_filename = 'Отчёт GTI-online.xlsx'.encode('utf-8')
-        return send_from_directory(file_path, file_name,
-                                   as_attachment=True,
-                                   mimetype='text/xlsx; charset=utf-8',
-                                   attachment_filename=attachment_filename)
-
-    else:
-        flash(f'Файла отчёта {file_name} нет, создайте фаил.')
-        return redirect(url_for('.user_report', network_id=network_id))
+    attachment_filename = 'Отчёт GTI-online.xlsx'.encode('utf-8')
+    return send_from_directory(file_path, file_name,
+                               as_attachment=True,
+                               mimetype='text/xlsx; charset=utf-8',
+                               attachment_filename=attachment_filename)

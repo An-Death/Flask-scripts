@@ -1,5 +1,5 @@
 from collections import defaultdict, OrderedDict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date as Date
 
 from models.wits_models import Wits_user as users
 
@@ -244,6 +244,8 @@ class Dt(Meta):
             self.dt = dt
         elif isinstance(dt, datetime):
             self.dt = int(datetime.timestamp(dt))
+        elif isinstance(dt, Date):
+            self.dt = Dt(dt.__str__()).to_timestamp()
         elif isinstance(dt, str):
             if dt.isdigit():
                 self.dt = int(dt[:10])
@@ -254,7 +256,7 @@ class Dt(Meta):
                 self.dt = datetime.strptime(dt, Dt.formats['date']).timestamp()
                 self.dt = int(self.dt)
         else:
-            exit('Не получилось распознать dt {}, type({})'.format(dt, type(dt)))
+            raise ValueError('Не получилось распознать dt {}, type({})'.format(dt, type(dt)))
 
     def __str__(self):
         year = Dt('2000-01-01').to_timestamp()

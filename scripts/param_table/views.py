@@ -19,7 +19,6 @@ def redirect_url(default='/'):
            url_for(default)
 
 
-
 @pt.route('/')
 @pt.route('/<int:network_id>')
 def param_table(network_id=None):

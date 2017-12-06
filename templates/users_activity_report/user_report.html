@@ -21,9 +21,14 @@
                             <p>Выберите промежуток для отчёта:</p>
                             {{ render_field(vars.get('form').date_from, min="2012-12-01", max="2145-01-08") }}
                             {{ render_field(vars.get('form').date_to, min="2012-12-01", max="2145-01-08") }}
-                            <input class="create_report" id="create_report" type="submit"
-                                   value="Сформировать отчёт"
-                                   onclick="change('create_report', 'Сформировать отчёт', 'Формирую')">
+                            {% if vars.get('ready') %}
+                                <input class="create_report" id="create_report" type="button" value="Скачать"
+                                       onclick='window.location.href="{{ url_for('.upload', file_name=vars.get('file_name')) }}"'/>
+                            {% else %}
+                                <input class="create_report" id="create_report" type="submit"
+                                       value="Сформировать отчёт"
+                                       onclick="change('create_report', 'Сформировать отчёт', 'Формирую... Ждите')">
+                            {% endif %}
                         </fieldset>
                     </form>
                 {% else %}
