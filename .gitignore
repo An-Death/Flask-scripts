@@ -4,7 +4,7 @@ scr/*
 database.py
 __pycache__
 __pycache__/*
-
+database.sqlite
 .bash*
 !.gitignore
 *.log

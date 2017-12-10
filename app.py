@@ -5,12 +5,14 @@ from flask_cache import Cache
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.routing import BaseConverter
 
-from config import Ops, Dev
+from config import Ops, Dev, Dev_offline
 
 app = Flask(__name__)
 if os.environ.get('SUPPORT_SCRIPTS_EXEC') == "Dev":
     app.secret_key = Dev.SECRET_KEY
     app.config.from_object(Dev)
+elif os.environ.get('SUPPORT_SCRIPTS_EXEC') == "Dev_offline":
+    app.config.from_object(Dev_offline)
 else:
     app.secret_key = Ops.SECRET_KEY
     app.config.from_object(Ops)
