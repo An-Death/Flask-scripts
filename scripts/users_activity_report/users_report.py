@@ -1,13 +1,9 @@
-import sys
-from collections import OrderedDict
-
 import pandas as pd
 from sqlalchemy.sql import func
 
 from models.wits_models import Wits_user as users, Wits_user_group as group
-from scr.projects.project import get_connect_to_db
 
-aliases = OrderedDict({
+aliases = {
     0: '№п/п',
     1: 'ФИО полностью',
     2: 'Наименование предприятия/филиала/экспедиции',
@@ -16,7 +12,7 @@ aliases = OrderedDict({
     5: 'Email',
     6: 'Логин в системе (совпадает с доменным именем)',
     7: 'Примечание'
-})
+}
 BKE_comr = {
     'GPN_Development': '',
     'RTM_KF': '',
@@ -48,41 +44,5 @@ def get_table(con):
     return table
 
 
-def main(p: str):
-    dbcon = get_connect_to_db(p)
-    table = get_table(dbcon)
-    sheet_name = 'Пользователи'
-    with pd.ExcelWriter('Список пользователей GTI-online.xlsx', engine='xlsxwriter') as writer:
-        table.to_excel(writer, sheet_name=sheet_name, index_label=aliases[0], startrow=1, header=False)
-        book = writer.book
-        # Add a header format.
-        header_format = book.add_format({
-            'bold': True,
-            'text_wrap': True,
-            'align': 'center',
-            'valign': 'top',
-            'fg_color': '#D7E4BC',
-            'border': 2})
-        formats = {
-            'fio': book.add_format({'text_wrap': True,
-                                    'border': 1}),
-        }
-
-        sheet = writer.sheets[sheet_name]
-        for col_num, value in enumerate(aliases.values()):
-            sheet.write(0, col_num, value, header_format)
-        sheet.set_column('B:B', 30, formats['fio'])
-        sheet.set_column('C:C', 18, formats['fio'])
-        sheet.set_column('D:D', 38, formats['fio'])
-        sheet.set_column('E:E', 38, formats['fio'])
-        sheet.set_column('F:F', 20, formats['fio'])
-        sheet.set_column('G:G', 15, formats['fio'])
-        sheet.set_column('H:H', 28, formats['fio'])
-
-
 if __name__ == '__main__':
-    if not sys.argv:
-        exit('Введите шорткат проекта!')
-    PROJECT = sys.argv[0]
-    # main('bke')
-    main(PROJECT)
+    pass
