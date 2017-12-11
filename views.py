@@ -3,6 +3,7 @@ from flask import render_template, flash
 
 from app import app
 from forms import LoginForm
+from models.models import *
 from scripts.param_table.views import pt
 from scripts.users_activity_report.views import at
 
@@ -29,9 +30,10 @@ def login():
 # @cache.cached(timeout=60)
 def scripts():
     __title__ = 'Scripts'
+    projects = Project.all_supported()
     links = {
-        'param_table': url_for('param_table.param_table', network_id=None),
-        'user_report': url_for('user_activity_table.user_report', network_id=None)
+        'Сформировать таблицу параметров': 'param_table.param_table',
+        'Сформировать таблицу активности': 'user_activity_table.user_report'
     }
     return render_template('scripts.html', vars=locals())
 

@@ -6,7 +6,9 @@ class Configuration:
     # add global config
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     basedir = os.path.abspath(os.path.dirname(__file__))
-
+    LOG_FILE = 'support_scripts.log'
+    PARAM_TABLE_DIR_PATH = '/share/param_table'
+    USER_ACTIVITY_DIR_PATH = '/share/activity_table'
 
 class Dev(Configuration):
     DEBUG = True

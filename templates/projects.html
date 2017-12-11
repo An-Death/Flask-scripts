@@ -1,0 +1,11 @@
+{% if vars.get('projects') %}
+    <ul class="sub-menu">
+        <p>Выберете проект:</p>
+        {% for project in vars.get('projects') %}
+            <li><a class='project'
+                   href="{{ url_for(link, network_id=project.network_id) }}">{{ project.name_ru }}</a></li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <h1>NULL</h1>
+{% endif %}

@@ -23,22 +23,40 @@
 </div>
 
 {% block header %}
-    <div class="navBar">
-        {% block navbar %}
-            <input class='BackButton ' type="button" value="Back" onclick="window.history.back()"/>
-            <input class='HomeButton ' type="button" value="Home"
-                   onclick='window.location.href="{{ url_for('index') }}"'/>
-            {{ vars.get('__title__') }}
-        {% endblock %}
-    </div>
-    {% endblock %}
+
+    <nav class="navbar navbar-inverse navbar-bg" role="navigation">
+        <div class="container">
+            <div class="navbar-header">
+                <p class="navbar-brand">{{ vars.get('__title__') }}</p>
+            </div>
+            <ul class="nav navbar-nav navbar-right">
+                {% block navbar %}
+                    <li>
+                        <button type="button" class='scroll-link' href='#' onclick="window.history.back()">Back</button>
+                    </li>
+                    <li>
+                        <button type="button" class='scroll-link' href="{{ url_for('scripts') }}">Home</button>
+                    </li>
+                {% endblock %}
+            </ul>
+        </div>
+
+    </nav>
+
+{% endblock %}
 
 <div class="page">
-    {% block page %}
-        <div class="content">
-            {% block content %}{% endblock %}
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-8 col-sm-offset-2">
+                {% block page %}
+                    <div class="content">
+                        {% block content %}{% endblock %}
+                    </div>
+                {% endblock %}
+            </div>
         </div>
-    {% endblock %}
+    </div>
 </div>
 
 <div class="footer">

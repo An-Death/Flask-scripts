@@ -1,11 +1,19 @@
 {% extends 'meta.html' %}
 {% block content %}
+    <div class="wrapper">
     {% if vars.get('links') %}
-        {% for name, link in vars.get('links').items() %}
-            <input class='ScriptButton' type="button" value="{{ name }}" onclick='window.location.href="{{ link }}"' />
-{#            <button><a href="{{ link }}">{{ name }}</a></button><br>#}
-        {%  endfor %}
+        <ul class="accordion">
+            {% for name, link in vars.get('links').items() %}
+                <li id="{{ loop.index }}" class="scripts-list">
+                    <a href="#{{ loop.index }}"><span></span>{{ name }}</a>
+                    {% include 'projects.html' %}
+                </li>
+                {#                <input class='ScriptButton' type="button" value="{{ name }}" onclick='window.location.href="{{ link }}"' />#}
+                {#              <button><a href="{{ link }}">{{ name }}</a></button><br>#}
+            {% endfor %}
+        </ul>
     {% else %}
         <h1>NULL</h1>
     {% endif %}
+    </div>
 {% endblock %}
