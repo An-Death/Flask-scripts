@@ -3,7 +3,6 @@ from flask import Blueprint, request, render_template, send_from_directory
 from app import app
 from models.models import *
 from .forms import ChoseDateForm
-# from .users_report import get_table
 from .user_activity_report import main, create_report
 
 at = Blueprint('user_activity_table', __name__, url_prefix='/scripts/user_activity_table')
@@ -26,12 +25,12 @@ def user_report(network_id=None):
         # создаём таблицы
         user_table, video_table, total_table = main(project.sqlsession, period_start, period_stop)
         if check:
-            return render_template('users_activity_report/table.html', vars=locals())
+            return render_template('users_activity_table/table.html', vars=locals())
         # записываем в фаил
         create_report(app.config['USER_ACTIVITY_DIR_PATH'] + file_name, user_table, video_table, total_table)
         # return redirect(url_for('.upload', file_name=file_name))
 
-    return render_template('users_activity_report/user_report.html', vars=locals())
+    return render_template('users_activity_table/user_report.html', vars=locals())
 
 
 @at.route('/upload/<path:file_name>')

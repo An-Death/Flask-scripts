@@ -2,16 +2,20 @@
 {% block content %}
     <div class="wrapper">
     {% if vars.get('links') %}
-        <ul class="accordion">
-            {% for name, link in vars.get('links').items() %}
-                <li id="{{ loop.index }}" class="scripts-list">
-                    <a href="#{{ loop.index }}"><span></span>{{ name }}</a>
+        {% for name, link in vars.get('links').items() %}
+            <input type="radio" id="tab-{{ loop.index }}" class="scripts-list" name="tab"/>
+            <label for="tab-{{ loop.index }}">{{ name }}</label>
+            {#                <input class='ScriptButton' type="button" value="{{ name }}" onclick='window.location.href="{{ link }}"' />#}
+            {#              <button><a href="{{ link }}">{{ name }}</a></button><br>#}
+        {% endfor %}
+        <div class="content">
+            {% for link in vars.get('links').values() %}
+                <article class="tab-{{ loop.index }}">
+                    <h2>Выберете проект:</h2>
                     {% include 'projects.html' %}
-                </li>
-                {#                <input class='ScriptButton' type="button" value="{{ name }}" onclick='window.location.href="{{ link }}"' />#}
-                {#              <button><a href="{{ link }}">{{ name }}</a></button><br>#}
+                </article>
             {% endfor %}
-        </ul>
+        </div>
     {% else %}
         <h1>NULL</h1>
     {% endif %}

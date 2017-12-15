@@ -1,4 +1,4 @@
-from flask import redirect, url_for, send_file
+from flask import redirect, url_for, request
 from flask import render_template, flash
 
 from app import app
@@ -6,6 +6,7 @@ from forms import LoginForm
 from models.models import *
 from scripts.param_table.views import pt
 from scripts.users_activity_report.views import at
+from scripts.users_activity_report.forms import ChoseDateForm
 
 app.register_blueprint(pt)
 app.register_blueprint(at)
@@ -31,23 +32,12 @@ def login():
 def scripts():
     __title__ = 'Scripts'
     projects = Project.all_supported()
+    form = ChoseDateForm(request.form)
     links = {
-        'Сформировать таблицу параметров': 'param_table.param_table',
-        'Сформировать таблицу активности': 'user_activity_table.user_report'
+        'param table': 'param_table.param_table',
+        'activity table': 'user_activity_table.user_report'
     }
     return render_template('scripts.html', vars=locals())
-
-
-# @app.route('/download/<string:method>')
-def download(method, shortcut=None, well_name=None):
-    # todo Загружаем последний фаил из нужной папки
-    if method == 'user_report':
-        file_path = '/home/as/vagrant/support_scripts/scr/user_activity_report/reports/GTI-online.xlsx'
-        return send_file(file_path, as_attachment=True,
-                         mimetype='text/xlsx; charset=utf-8',
-                         attachment_filename='Отчёт GTI-Online.xlsx'.encode('utf-8'))
-    elif method == 'param_table' and shortcut and well_name:
-        return redirect(url_for('param_table.download', shortcut=shortcut, well_name=well_name))
 
 
 @app.errorhandler(404)

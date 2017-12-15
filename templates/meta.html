@@ -35,7 +35,7 @@
                         <button type="button" class='scroll-link' href='#' onclick="window.history.back()">Back</button>
                     </li>
                     <li>
-                        <button type="button" class='scroll-link' href="{{ url_for('scripts') }}">Home</button>
+                        <button type="button" class='scroll-link' href="/">Home</button>
                     </li>
                 {% endblock %}
             </ul>
@@ -46,13 +46,8 @@
 {% endblock %}
 
 <div class="page">
-    <div class="container">
-        <div class="row">
-            <div class="col-sm-8 col-sm-offset-2">
                 {% block page %}
-                    <div class="content">
                         {% block content %}{% endblock %}
-                    </div>
                 {% endblock %}
             </div>
         </div>

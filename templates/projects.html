@@ -1,10 +1,10 @@
 {% if vars.get('projects') %}
     <ul class="sub-menu">
-        <p>Выберете проект:</p>
-        {% for project in vars.get('projects') %}
-            <li><a class='project'
-                   href="{{ url_for(link, network_id=project.network_id) }}">{{ project.name_ru }}</a></li>
-        {% endfor %}
+        {% if 'param_table' in link %}
+            {% include 'param_table/param_table_onepage.html' %}
+        {% elif 'user_activity_table' in link %}
+            {% include 'users_activity_table/user_table_onepage.html' %}
+        {% endif %}
     </ul>
 {% else %}
     <h1>NULL</h1>

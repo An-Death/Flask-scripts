@@ -1,0 +1,9 @@
+{% for project in vars.get('projects') %}
+    <li><a href="#{{ project.network_id }}">{{ project.name_ru }}</a>
+        {#<input type="radio" id="param-{{ loop.index }}" class="scripts-list" name="project" />#}
+        {#                <label for="param-{{ loop.index }}">{{ project.name_ru }}</label><br>#}
+        {#            <div class="input-form"></div>#}
+    </li>
+    {#    <a class='project'#}
+    {#                   href="{{ url_for(link, network_id=project.network_id) }}">{{ project.name_ru }}</a></li>#}
+{% endfor %}
