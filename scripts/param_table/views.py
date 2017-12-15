@@ -37,8 +37,11 @@ def param_table(network_id=None):
         except OperationalError:
             flash(f'База данных проекта {project.name_ru} недоступна!')
             return redirect(url_for('.param_table', network_id=None))
-        finally:
-            return render_template('param_table/param_table.html', vars=locals())
+        # finally:
+        #     if not wells:
+        #         return abort(404)
+        #     else:
+        return render_template('param_table/param_table.html', vars=locals())
 
 
 @pt.route('/<int:network_id>/<regex("\d+|''"):well_id>', methods=['GET', 'POST'])

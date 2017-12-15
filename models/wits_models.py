@@ -17,14 +17,14 @@ class Meta(Base):
             str(atr) for _, atr in self.__class__.__dict__.items() if not _.startswith('_'))))
 
     @classmethod
-    def as_string(cls, session):
-        return cls.query.statement.compile(compile_kwargs={"literal_binds": True}, dialect=session.bind.dialect)
+    def as_string(mcs, session):
+        return mcs.query.statement.compile(compile_kwargs={"literal_binds": True}, dialect=session.bind.dialect)
 
     @classmethod
-    def get(cls, pk, session=None):
+    def get(mcs, pk, session=None):
         if session:
             Base.query = session.query_property()
-        return cls.query.get(pk)
+        return mcs.query.get(pk)
 
 class Wits_network(Meta):
     __tablename__ = 'WITS_NETWORK'

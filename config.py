@@ -20,7 +20,7 @@ class Dev(Configuration):
 
 
 class Ops(Configuration):
-    DEBUG = False
+    DEBUG = True
     SECRET_KEY = database.Ops.SECRET_KEY
     SQLALCHEMY_DATABASE_URI = database.Ops.SQLALCHEMY_DATABASE_URI
     PARAM_TABLE_DIR_PATH = '/share/param_table'
