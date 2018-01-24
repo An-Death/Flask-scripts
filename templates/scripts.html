@@ -3,7 +3,7 @@
     <div class="wrapper">
     {% if vars.get('links') %}
         {% for name, link in vars.get('links').items() %}
-            <input type="radio" id="tab-{{ loop.index }}" class="scripts-list" name="tab"/>
+            <input type="radio" id="tab-{{ loop.index }}" class="scripts-list" name="tab" checked/>
             <label for="tab-{{ loop.index }}">{{ name }}</label>
             {#                <input class='ScriptButton' type="button" value="{{ name }}" onclick='window.location.href="{{ link }}"' />#}
             {#              <button><a href="{{ link }}">{{ name }}</a></button><br>#}

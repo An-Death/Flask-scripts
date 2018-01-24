@@ -23,14 +23,14 @@ def redirect_url(default='/'):
 @pt.route('/<int:network_id>')
 def param_table(network_id=None):
     __title__ = 'Param Table'
-    # projects = Project.query.filter_by(supported=True).all()
     projects = Project.all_supported()
+    # todo Переписать вьюху и шаблоны
     if not network_id:
-        # Return list of {projects}
+        # Return list of {projects}=
+        # projects = Project.all_supported()
         return render_template('param_table/param_table.html', vars=locals())
     else:
-        # Get project from list by network_id
-        project = [project for project in projects if project.network_id == network_id][0]
+        project = Project.get(network_id)
         try:
             # Getting active wells from current project
             wells = project.get_active_wells()
@@ -38,10 +38,7 @@ def param_table(network_id=None):
             flash(f'База данных проекта {project.name_ru} недоступна!')
             return redirect(url_for('.param_table', network_id=None))
         finally:
-            if not wells:
-                return abort(404)
-            else:
-                return render_template('param_table/param_table.html', vars=locals())
+            return render_template('param_table/param_table.html', vars=locals())
 
 
 @pt.route('/<int:network_id>/<regex("\d+|''"):well_id>', methods=['GET', 'POST'])

@@ -36,6 +36,7 @@ class Server(Meta):
 
 
 class Project(Meta):
+    # todo Написать хелп по использованию класса и объекта с описанием методов
     __tablename__ = 'project'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -46,7 +47,6 @@ class Project(Meta):
     name_en = db.Column(db.String(200), nullable=True)
 
     server = db.relationship('Server', backref=db.backref("projects"))
-
 
     def _sql_engine(self, loging=True):
         """
@@ -75,6 +75,10 @@ class Project(Meta):
             print('Project: {} Shortcuts: {}'.format(self.name, ', '.join(self.server.shortcuts)))
         else:
             return self.shortcuts
+
+    @property
+    def connection_info(self):
+        return self.server.connection_info
 
     @property
     def sqlsession(self):

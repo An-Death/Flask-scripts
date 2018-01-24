@@ -14,7 +14,7 @@ class Meta(Base):
 
     def __repr__(self):
         return ('<{}({})>'.format(self.__tablename__, ','.join(
-            str(atr) for _, atr in self.__class__.__dict__.items() if not _.startswith('_'))))
+            _ + ':' + str(atr) for _, atr in self.__dict__.items() if not _.startswith('_'))))
 
     @classmethod
     def as_string(mcs, session):
@@ -338,6 +338,9 @@ class Wits_param(Meta):
     unit_id = Column('unit_id', Integer, ForeignKey('WITS_UNIT.id'), nullable=False)
     value_min = Column('value_min', Float)
     value_max = Column('value_max', Float)
+
+    param_source_info = relationship('Wits_source_param', backref=backref('param_info', uselist=False))
+
 
 
 class Wits_unit(Meta):
