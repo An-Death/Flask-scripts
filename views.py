@@ -1,3 +1,5 @@
+import asyncio
+
 from flask import redirect, url_for, request
 from flask import render_template, flash
 
@@ -5,11 +7,15 @@ from app import app
 from forms import LoginForm
 from models.models import *
 from scripts.param_table.views import pt
-from scripts.users_activity_report.views import at
+from scripts.speed_test.views import st
 from scripts.users_activity_report.forms import ChoseDateForm
+from scripts.users_activity_report.views import at
 
 app.register_blueprint(pt)
 app.register_blueprint(at)
+app.register_blueprint(st)
+
+setattr(app, 'loop', asyncio.get_event_loop())
 
 
 @app.route('/')
@@ -34,8 +40,9 @@ def scripts():
     projects = Project.all_supported()
     form = ChoseDateForm(request.form)
     links = {
+        'activity table': 'user_activity_table.user_report',
         'param table': 'param_table.param_table',
-        'activity table': 'user_activity_table.user_report'
+        'speed test': 'speed_test.speed_test'
     }
     return render_template('scripts.html', vars=locals())
 

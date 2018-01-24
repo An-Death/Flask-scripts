@@ -1,0 +1,19 @@
+{% extends 'meta.html' %}
+{% block content %}
+    <div class="wrapper">
+        <div class="content">
+            {% if vars.get('df') %}
+                {{ vars.get('df')|safe }}
+            {% elif vars.get('wells') %}
+                <h1>{{ vars.get('project').name }}</h1>
+                {% for well in vars.get('wells') %}
+                    <p>
+                        <a href="{{ url_for('speed_test.speed_test', network_id=vars.get('project').network_id, gbox=well.source.product_key) }}">{{ well.name }}</a>
+                    </p>
+                {% endfor %}
+                </div>
+            {% else %}
+                <h1>NULL</h1>
+            {% endif %}
+    </div>
+{% endblock %}
