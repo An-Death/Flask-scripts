@@ -12,7 +12,7 @@ class Meta(db.Model):
 
     def __repr__(self):
         return ('<{}({})>'.format(self.__tablename__, ', '.join(
-            _ + ': '+ str(atr) for _, atr in self.__dict__.items() if not _.startswith('_'))))
+            _ + ': ' + str(atr) for _, atr in self.__dict__.items() if not _.startswith('_'))))
 
 
 class Server(Meta):
@@ -45,6 +45,7 @@ class Project(Meta):
     supported = db.Column(db.Boolean, default=False)
     name_ru = db.Column(db.String(200), nullable=True)
     name_en = db.Column(db.String(200), nullable=True)
+    gbox_connection_info = db.Column(db.Integer)
 
     server = db.relationship('Server', backref=db.backref("projects"))
 
@@ -75,6 +76,10 @@ class Project(Meta):
             print('Project: {} Shortcuts: {}'.format(self.name, ', '.join(self.server.shortcuts)))
         else:
             return self.shortcuts
+
+    @property
+    def name(self):
+        return self.name_ru
 
     @property
     def connection_info(self):
@@ -109,6 +114,7 @@ class Project(Meta):
     def get_well_by_id(self, well_id):
         Base.query = self.sqlsession.query_property()
         return well.query.get(well_id)
+
 
 class Server_connection_info(Meta):
     __tablename__ = 'server_connection_info'
@@ -154,3 +160,14 @@ class Project_info(Meta):
 
     def __str__(self):
         return self.prj
+
+
+class Gbox_connection_info(Meta):
+    __tablename__ = 'gbox_connection_info'
+
+    id = db.Column(db.Integer, db.ForeignKey(Project.gbox_connection_info), primary_key=True)
+    default_login = db.Column(db.String(200))
+    default_password = db.Column(db.String(200))
+    default_port = db.Column(db.Integer, default=22)
+
+    projects = db.relationship('Project', backref=db.backref('gbox', uselist=False))
