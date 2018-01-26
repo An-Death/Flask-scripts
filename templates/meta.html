@@ -35,7 +35,9 @@
                         <button type="button" class='scroll-link' href='#' onclick="window.history.back()">Back</button>
                     </li>
                     <li>
-                        <button type="button" class='scroll-link' href="/">Home</button>
+                        <button type="button" class='scroll-link' href="#"
+                                onclick="location.href = '{{ url_for('index') }}'">Home
+                        </button>
                     </li>
                 {% endblock %}
             </ul>
@@ -50,9 +52,6 @@
                         {% block content %}{% endblock %}
                 {% endblock %}
             </div>
-        </div>
-    </div>
-</div>
 
 <div class="footer">
     {% block footer %}

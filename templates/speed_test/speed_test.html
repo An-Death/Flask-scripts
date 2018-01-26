@@ -3,14 +3,25 @@
     <div class="wrapper">
         <div class="content">
             {% if vars.get('df') %}
+                <h1>{{ vars.get('project').name }}</h1>
+                <h2>{{ vars.get('gbox') }} : </h2>
                 {{ vars.get('df')|safe }}
             {% elif vars.get('wells') %}
                 <h1>{{ vars.get('project').name }}</h1>
                 {% for well in vars.get('wells') %}
                     <p>
-                        <a href="{{ url_for('speed_test.speed_test', network_id=vars.get('project').network_id, gbox=well.source.product_key) }}">{{ well.name }}</a>
+                        <a href="{{ url_for('.speed_test', network_id=vars.get('project').network_id, well_id=well.id) }}">{{ well.name }}</a>
                     </p>
                 {% endfor %}
+            {% elif vars.get('well') %}
+                <h1>Project: {{ vars.get('project').name }}</h1>
+                <h1>Well: {{ vars.get('well').name }}</h1>
+                <h2>Gbox: {{ vars.get('gbox') }}</h2>
+                <div><a href="{{ url_for('.speed_test',
+                network_id=vars.get('project').network_id,
+                well_id=vars.get('well').id,
+                gbox_addr=vars.get('well').gbox,
+                timeout=120 ) }}">Start</a></div>
                 </div>
             {% else %}
                 <h1>NULL</h1>

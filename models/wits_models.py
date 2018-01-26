@@ -168,6 +168,24 @@ class Wits_well(Meta):
     def source_type_name(self):
         return ': '.join(('name_ru', self.source.source_type.name_ru))
 
+    @property
+    def session(self):
+        if not hasattr(self, '_session'):
+            self._session = self._sa_instance_state.session
+        return self._session
+
+    @property
+    def record_tables(self):
+        return {self.tables[i] for i in self.tables.keys() if isinstance(i, int)}
+
+    @property
+    def product_key(self):
+        return self.source.product_key
+
+    @property
+    def gbox(self):
+        return '-'.join(map(str.lower, self.product_key.split('-')[:2]))
+
     def idx_table_by_record(self, record: int):
         return self.tables[record]['idx']
 
@@ -182,16 +200,6 @@ class Wits_well(Meta):
                 self.tables[record] = {}
             self.tables[record][table_name] = table
         self.tables[table_name] = table
-
-    @property
-    def session(self):
-        if not hasattr(self, '_session'):
-            self._session = self._sa_instance_state.session
-        return self._session
-
-    @property
-    def record_tables(self):
-        return {self.tables[i] for i in self.tables.keys() if isinstance(i, int)}
 
     def create_record_tables(self, record):
         record_tables = {'idx': f'WITS_RECORD{record}_IDX_{self.wellbore_id}',
