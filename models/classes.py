@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date as Date
 
 
 class Meta:
@@ -18,6 +18,8 @@ class Dt(Meta):
             self.dt = dt
         elif isinstance(dt, datetime):
             self.dt = int(datetime.timestamp(dt))
+        elif isinstance(dt, Date):
+            self.dt = Dt(dt.__str__()).to_timestamp()
         elif isinstance(dt, str):
             if dt.isdigit():
                 self.dt = int(dt[:10])
@@ -85,7 +87,6 @@ class Dt(Meta):
         dt = datetime.fromtimestamp(median)
         return dt.strftime('%B %Y')
 
-
-
-if __name__ == '__main__':
-    print(Dt('2017-12-03 23:41:17.906832'))
+    @staticmethod
+    def now():
+        return Dt(datetime.now())

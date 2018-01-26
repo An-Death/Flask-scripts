@@ -5,8 +5,8 @@ from pathlib import Path
 import pandas as pd
 from xlsxwriter.utility import xl_range, xl_col_to_name
 
+from models.classes import Dt
 from models.wits_models import *
-from .classes import Dt
 
 TEST = False
 RECORDS_COMPREHENSION = {

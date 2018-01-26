@@ -1,7 +1,7 @@
 from collections import defaultdict, OrderedDict
 from datetime import datetime
 
-from models.classes import Dt
+from models.classes import Meta, Dt
 from models.wits_models import Wits_user as users
 
 
@@ -11,11 +11,6 @@ from models.wits_models import Wits_user as users
 def sort_by_month(date: str):
     """Передаём сюда дату в формате October 2017"""
     return datetime.strptime(date, '%B %Y')
-
-
-class Meta:
-    def __repr__(self):
-        return '<class.{}({})>'.format(self.__class__.__name__, self.__str__())
 
 
 class User(Meta):
