@@ -26,6 +26,7 @@ class Meta(Base):
             Base.query = session.query_property()
         return mcs.query.get(pk)
 
+
 class Wits_network(Meta):
     __tablename__ = 'WITS_NETWORK'
 
@@ -348,7 +349,6 @@ class Wits_param(Meta):
     value_max = Column('value_max', Float)
 
     param_source_info = relationship('Wits_source_param', backref=backref('param_info', uselist=False))
-
 
 
 class Wits_unit(Meta):

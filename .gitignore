@@ -8,3 +8,6 @@ database.sqlite
 .bash*
 !.gitignore
 *.log
+static/img/
+tables/
+SUP*

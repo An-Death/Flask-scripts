@@ -26,8 +26,6 @@ def param_table(network_id=None):
     projects = Project.all_supported()
     # todo Переписать вьюху и шаблоны
     if not network_id:
-        # Return list of {projects}=
-        # projects = Project.all_supported()
         return render_template('param_table/param_table.html', vars=locals())
     else:
         project = Project.get(network_id)

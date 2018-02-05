@@ -20,9 +20,9 @@ else:
 
 if not app.debug:
     import logging
-    from logging.handlers import RotatingFileHandler
 
-    file_handler = RotatingFileHandler(app.config['LOG_FILE'], 'a', 1 * 1024 ** 3, 3)
+    # file_handler = RotatingFileHandler(app.config['LOG_FILE'], 'a', 1 * 1024 ** 3, 3)
+    file_handler = logging.StreamHandler()
     file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'))
     app.logger.setLevel(logging.DEBUG)
     file_handler.setLevel(logging.DEBUG)

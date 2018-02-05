@@ -6,6 +6,7 @@ from flask import render_template, flash
 from app import app
 from forms import LoginForm
 from models.models import *
+from scripts.ims_params_info.views import ims
 from scripts.param_table.views import pt
 from scripts.speed_test.views import st
 from scripts.users_activity_report.forms import ChoseDateForm
@@ -14,6 +15,7 @@ from scripts.users_activity_report.views import at
 app.register_blueprint(pt)
 app.register_blueprint(at)
 app.register_blueprint(st)
+app.register_blueprint(ims)
 
 setattr(app, 'loop', asyncio.get_event_loop())
 

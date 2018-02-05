@@ -1,0 +1,6 @@
+{% extends 'meta.html' %}
+{% block content %}
+    {% if vars.get('res') %}
+        <div>{{ vars.get('res')|safe }} </div>
+    {% endif %}
+{% endblock %}
