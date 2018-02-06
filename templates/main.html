@@ -1,0 +1,21 @@
+{% extends 'meta.html' %}
+{% block content %}
+    <div class="wrapper">
+        {% if vars.get('sup_dict') %}
+            {% for link in vars.get('sup_dict') %}
+                <input type="radio" id="tab-{{ loop.index }}" class="scripts-list" name="tab" checked/>
+                <label for="tab-{{ loop.index }}">{{ link }}</label>
+            {% endfor %}
+            <div class="content">
+                {% for link in vars.get('sup_dict') %}
+                    <article class="tab-{{ loop.index }}">
+                        <h2>Выберете проект:</h2>
+                        {% include 'projects.html' %}
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <h1>NULL</h1>
+        {% endif %}
+    </div>
+{% endblock %}

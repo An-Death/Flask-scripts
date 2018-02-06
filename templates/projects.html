@@ -8,6 +8,16 @@
             {% include 'users_activity_table/user_table_onepage.html' %}
         {% endif %}
     </ul>
+{% elif vars.get('sup_dict') %}
+    <ul class="sub-menu">
+        {% for project in vars.get('sup_dict').get(link) %}
+            <li><a class='project' hidden="true"
+                   href="{{ project.uri_monitoring }}">[ {{ project.shortcut }} ]</a>
+                <a class='project'
+                   href="{{ url_for('project_info', network_id=project.network_id) }}">{{ project.name_ru }}</a>
+            </li>
+        {% endfor %}
+    </ul>
 {% else %}
     <h1>NULL</h1>
 {% endif %}

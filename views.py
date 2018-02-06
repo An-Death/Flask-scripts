@@ -22,7 +22,7 @@ setattr(app, 'loop', asyncio.get_event_loop())
 
 @app.route('/')
 def index():
-    return redirect(url_for('scripts'))
+    return redirect(url_for('main'))
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -34,6 +34,41 @@ def login():
         return redirect(url_for('index'))
     return render_template('login.html', vars=locals(), form=form)
 
+
+@app.route('/main.html')
+def main():
+    """:returns
+    List of supported and unsupported projects
+    """
+    __title__ = 'Выберете проект:'
+    sup_dict = {'Поддержка': Project.query.filter_by(supported=0),
+                'Сопровождение': Project.query.filter_by(supported=1)}
+    return render_template('main.html', vars=locals())
+
+
+@app.route('/<int:network_id>/info')
+def project_info(network_id):
+    __title__ = 'Project info'
+    project = Project.get(network_id)
+    wells = project.get_active_wells()
+
+    return render_template('project_info.html', vars=locals())
+
+
+@app.route('/<int:network_id>/edit')
+def project_edit(network_id):
+    project = Project.get(network_id=network_id)
+    __title__ = f'{project.name} INFO'
+    return render_template('project_edit.html', vars=locals())
+
+
+@app.route('/<int:network_id>/<int:well_id>/info')
+def well_info(network_id, well_id):
+    project = Project.get(network_id)
+    well = project.get_well_by_id(well_id)
+    __title__ = f'{project.name}>>{well.name}'
+    gbox = well.gbox
+    return render_template('well_info.html', vars=locals())
 
 @app.route('/scripts')
 # @cache.cached(timeout=60)

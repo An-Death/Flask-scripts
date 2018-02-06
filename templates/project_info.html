@@ -1,0 +1,28 @@
+{% extends 'meta.html' %}
+{% block content %}
+    <div class="wrapper">
+        {% if vars.get('project') %}
+            {% set project = vars.get('project') %}
+            <h3>
+                {{ project.name }}
+            </h3>
+            <p><a href="{{ project.uri_monitoring }}">Monitoring</a>
+                <a href="{{ url_for('project_edit', network_id=project.network_id) }}">Config</a></p>
+
+            <div class="wellChooser">
+            {% if vars.get('wells') | length > 0 %}
+                <p>Выберите скважину:</p>
+                {% for well in vars.get('wells') %}
+                    <a href="{{ url_for('well_info', well_id=well.id, network_id=project.network_id) }}">{{ well.name }}</a>
+                    <br>
+
+                {% endfor %}
+            {% else %}
+                <h3>Нет активных скважин</h3>
+            {% endif %}
+        {% else %}
+            <h1>NULL</h1>
+        {% endif %}
+        </div>
+    </div>
+{% endblock %}

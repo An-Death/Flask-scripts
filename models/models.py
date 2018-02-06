@@ -97,6 +97,11 @@ class Project(Meta):
     def shortcut(self):
         return self.server.shortcut
 
+    @property
+    def uri_monitoring(self):
+        server = self.server
+        return server.connection_info.url
+
     @classmethod
     def get(cls, network_id):
         return cls.query.get_or_404(network_id)

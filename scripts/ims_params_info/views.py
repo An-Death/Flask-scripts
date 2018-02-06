@@ -7,7 +7,7 @@ ims = Blueprint('ims_params', __name__, url_prefix='/scripts/ims_params')
 
 
 @ims.route('/')
-@ims.route('/<int:sup>')
+@ims.route('/<int(min=1, max=6):sup>')
 def ims_index(sup=None):
     __title__ = 'IMS params {}'.format(f'for SUP{sup}' if sup else '')
     if not sup:

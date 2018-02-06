@@ -1,0 +1,16 @@
+{% extends 'meta.html' %}
+{% block content %}
+    <div class="wrapper">
+        {% if vars.get('well') %}
+            {% set well = vars.get('well') %}
+            <h3>
+                {{ well.name }}
+            </h3>
+            <p><a href="http://{{ well.gbox }}/">{{ well.gbox }}</a>
+            <div class="wellChooser">
+        {% else %}
+            <h1>NULL</h1>
+        {% endif %}
+        </div>
+    </div>
+{% endblock %}
