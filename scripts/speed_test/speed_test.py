@@ -125,24 +125,10 @@ def server(server_address: str, port: int):
 
 
 if __name__ == '__main__':
-    import sys
+    import asyncio
 
-    try:
-        scripts, *args = sys.argv
-        print(scripts, args)
-        if not args or '-h' in args[0] or '--help' in args[0] or len(args) < 8:
-            print(speedTest.__doc__)
-            exit(1)
-        test = speedTest(args[0], int(args[1]), args[2], args[3],
-                         args[4], int(args[5]), args[6], args[7],
-                         timeout=args[8], verbose=True,
-                         ailoop=asyncio.get_event_loop())
-        try:
-            print(test())
-        except Exception as e:
-            print(e)
-        finally:
-            test.close()
-    except ValueError:
-        help(speedTest)
-        exit(1)
+    loop = asyncio.get_event_loop()
+
+    test = speedTest('localhost', 22, 'ts', 'figase99',
+                     'gbox-03', 22, 'ts', 'of1Aengo',
+                     ailoop=loop, timeout=120, verbose=True)

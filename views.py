@@ -51,9 +51,19 @@ def project_info(network_id):
     __title__ = 'Project info'
     project = Project.get(network_id)
     wells = project.get_active_wells()
+    speed_server = 'Online' if project.speed_test_server_status() else 'Offline'
 
     return render_template('project_info.html', vars=locals())
 
+
+@app.route('/<int:network_id>/speed_server')
+def speed_server(network_id):
+    project = Project.get(network_id)
+    if project.speed_test_server_status():
+        project.stop_speed_test_server()
+    else:
+        project.run_speed_test_server()
+    return redirect(url_for('project_info', network_id=network_id))
 
 @app.route('/<int:network_id>/edit')
 def project_edit(network_id):
@@ -84,10 +94,10 @@ def scripts():
     return render_template('scripts.html', vars=locals())
 
 
-@app.errorhandler(404)
-def page_not_found(error):
-    return redirect(url_for('index'))
-    # return render_template('page_not_found.html'), 404
+# @app.errorhandler(404)
+# def page_not_found(error):
+#     return redirect(url_for('index'))
+#     # return render_template('page_not_found.html'), 404
 
 
 @app.errorhandler(500)

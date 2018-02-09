@@ -10,6 +10,19 @@ body {
     font-size: 18px;
 }
 
+.speed_test_check {
+    color: green;
+    background-color: white;
+    border: none;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.speed_test_check[value=Offline] {
+    color: red;
+}
+
 .navbar-bg {
     background: white;
 }

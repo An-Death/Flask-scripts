@@ -1,3 +1,4 @@
+from lazy_property import LazyProperty as lazy_property
 from sqlalchemy import BLOB, DECIMAL, Enum
 from sqlalchemy import Integer, String, ForeignKey, Text, DateTime, Float, Boolean
 from sqlalchemy import Table, Column
@@ -161,29 +162,27 @@ class Wits_well(Meta):
     def checkwell(cls, ses, name: str):
         return bool(ses.query(cls.name).filter(cls.name == name).count())
 
-    @property
+    @lazy_property
     def source_type_id(self):
         return self.source.type_id
 
-    @property
+    @lazy_property
     def source_type_name(self):
         return ': '.join(('name_ru', self.source.source_type.name_ru))
 
-    @property
+    @lazy_property
     def session(self):
-        if not hasattr(self, '_session'):
-            self._session = self._sa_instance_state.session
-        return self._session
+        return self._sa_instance_state.session
 
-    @property
+    @lazy_property
     def record_tables(self):
         return {self.tables[i] for i in self.tables.keys() if isinstance(i, int)}
 
-    @property
+    @lazy_property
     def product_key(self):
         return self.source.product_key
 
-    @property
+    @lazy_property
     def gbox(self):
         return '-'.join(map(str.lower, self.product_key.split('-')[:2]))
 

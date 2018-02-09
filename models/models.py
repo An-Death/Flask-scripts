@@ -1,7 +1,14 @@
+import socket
+from contextlib import closing
+from pathlib import Path
+
+from lazy_property import LazyProperty as lazy_property
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
+from ssh_decorate import ssh_connect
 
 from app import db
+# from app import log
 from .wits_models import Base
 from .wits_models import Wits_well as well, Wits_source as source, Wits_well_prop as prop
 
@@ -28,11 +35,13 @@ class Server(Meta):
     def __str__(self):
         return self.name
 
-    @property
+    @lazy_property
     def shortcut(self):
-        short = self.shortcuts.split(',')
-        short.sort(key=len)
-        return short[-1].strip()
+        return self.shortcuts.split(',').sort(key=len).pop().strip() or ''
+
+    @lazy_property
+    def host(self):
+        return self.connection_info.ssh
 
 
 class Project(Meta):
@@ -77,30 +86,31 @@ class Project(Meta):
         else:
             return self.shortcuts
 
-    @property
+    @lazy_property
     def name(self):
         return self.name_ru
 
-    @property
+    @lazy_property
     def connection_info(self):
         return self.server.connection_info
 
-    @property
+    @lazy_property
     def sqlsession(self):
-        if not hasattr(self, 'session'):
-            self.session = scoped_session(sessionmaker(autocommit=False,
-                                                       autoflush=False,
-                                                       bind=self._sql_engine()))
-        return self.session
+        return scoped_session(
+            sessionmaker(autocommit=False, autoflush=False, bind=self._sql_engine())
+        )
 
-    @property
+    @lazy_property
     def shortcut(self):
         return self.server.shortcut
 
-    @property
+    @lazy_property
     def uri_monitoring(self):
-        server = self.server
-        return server.connection_info.url
+        return self.server.connection_info.url
+
+    @lazy_property
+    def SSHClient(self):
+        return ssh_connect(**self.server.host, verbose=True)
 
     @classmethod
     def get(cls, network_id):
@@ -120,6 +130,27 @@ class Project(Meta):
         Base.query = self.sqlsession.query_property()
         return well.query.get(well_id)
 
+    def speed_test_server_status(self):
+        with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
+            if sock.connect_ex((self.server.host['server'], 3333)) == 0:
+                return True
+
+    def run_speed_test_server(self):
+        from app import app
+        if not self.speed_test_server_status():
+            serv = Path(app.root_path).joinpath('scripts/speed_test/async_server.py')
+            remote = Path('/tmp').joinpath(serv.name).as_posix()
+            command = 'nohup python3 {} --start >/tmp/async_server.out & sleep 3'.format(remote)
+            self.SSHClient.put_file(local_path=serv,
+                                    remote_path=remote)
+            # log.info(f'send command {command} on server {self.server.shortcut}')
+            print(command)
+            self.SSHClient.exec_cmd(command)
+
+    def stop_speed_test_server(self):
+        if self.speed_test_server_status():
+            remote = Path('/tmp').joinpath('async_server.py')
+            self.SSHClient.exec_cmd('python3 {} --stop'.format(remote.as_posix()))
 
 class Server_connection_info(Meta):
     __tablename__ = 'server_connection_info'
@@ -151,6 +182,9 @@ class Server_connection_info(Meta):
     def __str__(self):
         return self.server
 
+    @lazy_property
+    def ssh(self):
+        return dict(server=self.host, port=self.port, user=self.login, password=self.password)
 
 class Project_info(Meta):
     __tablename__ = 'project_info'

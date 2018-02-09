@@ -3,12 +3,15 @@
     <div class="wrapper">
         {% if vars.get('project') %}
             {% set project = vars.get('project') %}
+            {% set server = vars.get('speed_server') %}
             <h3>
                 {{ project.name }}
             </h3>
             <p><a href="{{ project.uri_monitoring }}">Monitoring</a>
                 <a href="{{ url_for('project_edit', network_id=project.network_id) }}">Config</a></p>
-
+            <form action="{{ url_for('speed_server', network_id=project.network_id) }}" method="get">
+                Speed Test server:
+                <input class="speed_test_check" type="submit" value="{{ server }}"></form>
             <div class="wellChooser">
             {% if vars.get('wells') | length > 0 %}
                 <p>Выберите скважину:</p>

@@ -11,6 +11,7 @@ Flask-WTF==0.14.2
 idna==2.6
 itsdangerous==0.24
 Jinja2==2.10
+lazy-property==0.0.1
 logger==1.4
 MarkupSafe==1.0
 numpy==1.13.3
