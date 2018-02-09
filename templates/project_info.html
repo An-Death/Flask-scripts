@@ -1,31 +1,100 @@
 {% extends 'meta.html' %}
+{% from "forms/macros.html" import render_field %}
+
 {% block content %}
     <div class="wrapper">
         {% if vars.get('project') %}
             {% set project = vars.get('project') %}
             {% set server = vars.get('speed_server') %}
-            <h3>
-                {{ project.name }}
-            </h3>
-            <p><a href="{{ project.uri_monitoring }}">Monitoring</a>
+            {#            <h3  class="project_name" >#}
+            {#                {{ project.name }}#}
+            {#            </h3>#}
+            {# header #}
+            <p>
+                <a href="{{ project.uri_monitoring }}">Monitoring</a>
                 <a href="{{ url_for('project_edit', network_id=project.network_id) }}">Config</a></p>
-            <form action="{{ url_for('speed_server', network_id=project.network_id) }}" method="get">
+
+            {# Speed test server #}
+            <form class="param_table_form"
+                  action="{{ url_for('speed_server', network_id=project.network_id) }}" method="get">
                 Speed Test server:
                 <input class="speed_test_check" type="submit" value="{{ server }}"></form>
-            <div class="wellChooser">
-            {% if vars.get('wells') | length > 0 %}
-                <p>Выберите скважину:</p>
-                {% for well in vars.get('wells') %}
-                    <a href="{{ url_for('well_info', well_id=well.id, network_id=project.network_id) }}">{{ well.name }}</a>
-                    <br>
 
-                {% endfor %}
-            {% else %}
-                <h3>Нет активных скважин</h3>
-            {% endif %}
+            {# USER ACTIVITY REPORT #}
+            <form class="param_table_form"
+                  action="{{ url_for('user_activity_table.user_report', network_id=project.network_id) }}"
+                  method="post">
+                <fieldset>
+                    <input class="radio_item" id="pr{{ project.id }}" name="project_name" type="radio"
+                           value="{{ project.network_id }}" checked/>
+                    <label class="project_name" for="pr{{ project.id }}">Активность пользователей</label><br>
+                    {{ vars.get('form').csrf_token }}
+                    <p>Выберите промежуток для отчёта:</p>
+                    {{ render_field(vars.get('form').date_from, min="2012-12-01", max="2145-01-08") }}
+                    {{ render_field(vars.get('form').date_to, min="2012-12-01", max="2145-01-08") }}
+                    {% if vars.get('ready') %}
+                        <input class="create_report" id="create_report" type="button" value="Скачать"
+                               onclick='window.location.href="{{ url_for('.upload', file_name=vars.get('file_name')) }}"'/>
+                    {% else %}
+                        <input class="create_report" id="create_report" type="submit"
+                               value="Сформировать отчёт"
+                               onclick="change('create_report', 'Сформировать отчёт', 'Формирую... Ждите')">
+                    {% endif %}
+                </fieldset>
+            </form>
+
+            {# USER ACTIVITY REPORT #}
+            <form class="param_table_form"
+                  action="{{ url_for( 'param_table.prepare_table', network_id=project.network_id, well_id='') }}"
+                  method="post">
+                <fieldset>
+                    <input class="radio_item" id="pr{{ project.id }}" name="project_name" type="radio"
+                           value="{{ project.network_id }}" checked/>
+                    <label class="project_name" for="pr{{ project.id }}">Таблица параметров</label><br>
+                    {% if vars.get('wells') | length > 0 %}
+                        <label>
+                            <select name="well_id" required>
+                                <p>Выберите скважину:</p>
+                                {% for well in vars.get('wells') %}
+                                    <option value="{{ well.id }}">{{ well.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </label>
+                        <br>
+                        <input id="records" class="records" type="checkbox"
+                               onchange='activateOrDisable("records", ["records_input"]);'>
+                        <label for="records">Records</label>
+                        <input id="records_input" name="list_of_records" class="list_of_records" type="text"
+                               placeholder="1,11,12" disabled required>
+                        <br>
+                        <input id="limits" type="checkbox"
+                               onchange='activateOrDisable("limits", ["limits_list", "limit_value"]);'>
+                        <label for="limits">Limits</label>
+                        <label for="limits_list">
+                            <select id="limits_list" name="limit" disabled>
+                                <option value="weeks">Weeks</option>
+                                <option value="days">Days</option>
+                                {#                                            todo Допилить js для скрытия/открытия форм#}
+                                {#                                            <option value="custom">Custom</option>#}
+                                {#                                            <option value="full">Full data</option>#}
+                            </select>
+                        </label>
+                        <input id="limit_value" name="limit_value" type="number" placeholder="2" disabled
+                               required>
+                        <input type="date" id="from" name="limit_from" min="2012-12-01" max="2145-01-08"
+                               hidden disabled required>
+                        <input type="date" id="to" name="limit_to" min="2012-12-01" max="2145-01-08" hidden
+                               disabled required>
+                        <input class="create_report" id="create_report" type="submit"
+                               value="Проверить скважину"
+                               onclick="change('create_report', 'Проверить скважину', 'Проверяю... Ждите')">
+                    {% else %}
+                        <p>Активных скважин нет.</p>
+                    {% endif %}
+                </fieldset>
+            </form>
         {% else %}
             <h1>NULL</h1>
         {% endif %}
         </div>
-    </div>
 {% endblock %}

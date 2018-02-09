@@ -48,10 +48,11 @@ def main():
 
 @app.route('/<int:network_id>/info')
 def project_info(network_id):
-    __title__ = 'Project info'
     project = Project.get(network_id)
+    __title__ = f'{project.name}'
     wells = project.get_active_wells()
     speed_server = 'Online' if project.speed_test_server_status() else 'Offline'
+    form = ChoseDateForm(request.form)
 
     return render_template('project_info.html', vars=locals())
 
@@ -75,7 +76,7 @@ def project_edit(network_id):
 @app.route('/<int:network_id>/<int:well_id>/info')
 def well_info(network_id, well_id):
     project = Project.get(network_id)
-    well = project.get_well_by_id(well_id)
+    wells = project.get_well_by_id(well_id)
     __title__ = f'{project.name}>>{well.name}'
     gbox = well.gbox
     return render_template('well_info.html', vars=locals())
