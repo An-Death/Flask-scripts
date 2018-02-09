@@ -23,11 +23,11 @@ def user_report(network_id=None):
         check = form.data.get('check')
         file_name = f'{network_id}/{period_start}_{period_stop}.xlsx'
         # создаём таблицы
-        user_table, video_table, total_table = main(project.sqlsession, period_start, period_stop)
+        user_table, video_table, total_table = main(project.sqlsession, period_start, period_stop, network_id)
         if check:
             return render_template('users_activity_table/table.html', vars=locals())
         # записываем в фаил
-        create_report(app.config['USER_ACTIVITY_DIR_PATH'] + file_name, user_table, video_table, total_table)
+        create_report(app.config['USER_ACTIVITY_DIR_PATH'] + '/' + file_name, user_table, video_table, total_table)
         # return redirect(url_for('.upload', file_name=file_name))
 
     return render_template('users_activity_table/user_report.html', vars=locals())

@@ -26,7 +26,7 @@ BKE_comr = {
 }
 
 
-def get_table(con):
+def get_table(con, network_id):
     query = con.query(func.CONCAT_WS(' ', users.last_name, users.first_name, users.patr_name).label('1'),
                       group.name.label('2'),
                       users.organization.label('3'),
@@ -35,6 +35,7 @@ def get_table(con):
                       users.name.label('6'),
                       users.tel.label('7'),
                       ).outerjoin(group, users.group_id == group.id)
+    query = query.filter(users.network_id == network_id)
     query = query.filter(users.removed == 0)
     query = query.order_by(group.name, users.id)
     query_as_string = query.statement.compile(compile_kwargs={"literal_binds": True},

@@ -6,7 +6,8 @@ from collections import defaultdict
 import pandas as pd
 
 from models.wits_models import (Wits_user_log as log,
-                                Wits_user_event as event)
+                                Wits_user_event as event,
+                                Wits_user as users)
 from .classes import User, Dt, sort_by_month
 from .table_writer import create_report
 from .users_report import get_table
@@ -39,8 +40,9 @@ def get_events_table(session):
     return {name: _id for _id, name in event_table}
 
 
-def get_wits_user_log_data(session, limit):
-    log_table = session.query(log.user_id, log.date, log.data, log.event_id)
+def get_wits_user_log_data(session, limit, network_id):
+    log_table = session.query(log.user_id, log.date, log.data, log.event_id).join(users, users.id == log.user_id)
+    log_table = log_table.filter(users.network_id == network_id)
     log_table = log_table.filter(log.date.between(limit['start'].to_request(), limit['stop'].to_request()))
     log_table = log_table.filter(log.event_id.notin_([5, 6, 9]))
     log_table = log_table.order_by(log.date)
@@ -116,7 +118,7 @@ def prepare_table(users, data_dict):
     return merged
 
 
-def main(session, start: str, stop: str):
+def main(session, start: str, stop: str, network_id: int):
     u = defaultdict(User)
 
     limit = {'start': Dt(start), 'stop': Dt(stop)}
@@ -126,7 +128,7 @@ def main(session, start: str, stop: str):
     # Дёргаем из базы таблицу WITS_USER_EVENT и приобразуем её в словарь
     event_dict = get_events_table(dbconnection)
     # Возвращаем список всез записей из WITS_USER_LOG в пределах limits
-    log_table = get_wits_user_log_data(dbconnection, limit)
+    log_table = get_wits_user_log_data(dbconnection, limit, network_id)
 
     # ===============================================================================================================
     # START CYCLE
@@ -174,7 +176,7 @@ def main(session, start: str, stop: str):
     close_all_active_session(date, u)
     calculate_all_users_activity(u)
 
-    user_table = get_table(dbconnection)
+    user_table = get_table(dbconnection, network_id)
     video_dict, total_dict = users_activity_as_dict(u)
     video_table = prepare_table(u, video_dict)
     total_table = prepare_table(u, total_dict)
